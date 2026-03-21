@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Simurba</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { display: flex; height: 100vh; font-family: sans-serif; background: #1a1a2e; color: white; }
+        #canvas-zone { flex: 3; display: flex; align-items: center; justify-content: center; border-right: 2px solid #333; }
+        #dashboard { flex: 1; padding: 20px; background: #16213e; }
+        h2 { margin-bottom: 20px; color: #e94560; }
+    </style>
+</head>
+<body>
+    <div id="canvas-zone">
+        <canvas id="traffic-canvas" width="600" height="500"></canvas>
+    </div>
+    <div id="dashboard">
+        <h2>Tableau de bord</h2>
+        <p>État : en attente...</p>
+    </div>
+</body>
+</html>
