@@ -60,13 +60,36 @@ const canvas = document.getElementById('traffic-canvas');
         });
     }
 
+    let running = true;
+    let animationId;
+
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawRoads();
         drawNodes();
         drawVehicles();
         updateVehicles();
-        requestAnimationFrame(loop);
+        animationId = requestAnimationFrame(loop);
     }
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+        if(!running) {
+            running = true;
+            document.getElementById('status').textContent= 'en cours...';
+            loop();
+        }
+    });
+
+    document.getElementById('btn-pause').addEventListener('click', () => {
+        running = false;
+        cancelAnimationFrame(animationId);
+        document.getElementById('status').textContent= 'en pause'; 
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        vehicles.forEach(v => {v.progress = 0});
+        document.getElementById('status').textContent = 'en cours...';
+        if(!running) {running = true; loop();}
+    })    ;
 
     loop();

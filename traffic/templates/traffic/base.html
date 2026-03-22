@@ -10,6 +10,19 @@
         #canvas-zone { flex: 3; display: flex; align-items: center; justify-content: center; border-right: 2px solid #333; }
         #dashboard { flex: 1; padding: 20px; background: #16213e; }
         h2 { margin-bottom: 20px; color: #e94560; }
+        button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #c73652; }
     </style>
 </head>
 <body>
@@ -18,7 +31,11 @@
     </div>
     <div id="dashboard">
         <h2>Tableau de bord</h2>
-        <p>État : en attente...</p>
+        <p> Etat: <span id="status">en cours...</span></p>
+        <br>
+        <button id="btn-start">Demarrer</button>
+        <button id="btn-pause">Pauser</button>
+        <button id="btn-reset">Reinitialiser</button>
     </div>
     <script src="{% static 'traffic/js/simulation.js' %}"></script>
 </body>
