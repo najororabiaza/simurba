@@ -9,11 +9,17 @@ const canvas = document.getElementById('traffic-canvas');
     };
 
     const roads = [
-        { from: nodes.topLeft,     to: nodes.topRight    },
-        { from: nodes.bottomLeft,  to: nodes.bottomRight },
-        { from: nodes.topLeft,     to: nodes.bottomLeft  },
-        { from: nodes.topRight,    to: nodes.bottomRight },
+        { from: nodes.topLeft,     to: nodes.topRight, state:'fluide'},
+        { from: nodes.bottomLeft,  to: nodes.bottomRight, state:'ralenti' },
+        { from: nodes.topLeft,     to: nodes.bottomLeft, state:'bouchon'  },
+        { from: nodes.topRight,    to: nodes.bottomRight, state:'fluide' },
     ];
+
+    const stateColors = {
+        fluide: '#4ade80', // vert
+        ralenti: '#fb923c', // orange
+        bouchon: '#ef4444', // rouge
+    }
 
     // Véhicules — un par route, progress entre 0 et 1
     const vehicles = roads.map(road => ({
@@ -27,7 +33,7 @@ const canvas = document.getElementById('traffic-canvas');
             ctx.beginPath();
             ctx.moveTo(road.from.x, road.from.y);
             ctx.lineTo(road.to.x, road.to.y);
-            ctx.strokeStyle = '#4ade80';
+            ctx.strokeStyle = stateColors[road.state];
             ctx.lineWidth = 4;
             ctx.stroke();
         });
