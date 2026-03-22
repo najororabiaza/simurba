@@ -1,33 +1,46 @@
 const canvas = document.getElementById('traffic-canvas');
 const ctx = canvas.getContext('2d');
+canvas.width = 750;
+canvas.height = 650;
 
-canvas.width = 700;
-canvas.height = 600;
+// Chargement des images
+const bgImg = new Image();
+bgImg.src = '/static/traffic/img/backgroundGrass.jpg';
 
-// Grille 3x3 — 9 intersections
+const roadImgWith = new Image();
+roadImgWith.src = '/static/traffic/img/road2lanesCropWith.png';
+
+const roadImgWithout = new Image();
+roadImgWithout.src = '/static/traffic/img/road2lanesCropWithout.png';
+
+const carImg = new Image();
+carImg.src = '/static/traffic/img/carSmall2.png';
+
+const truckImg = new Image();
+truckImg.src = '/static/traffic/img/truck1Small.png';
+
+const tlRedImg = new Image();
+tlRedImg.src = '/static/traffic/img/trafficLight_red.png';
+
+const tlGreenImg = new Image();
+tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
+
+// Grille 3x3
 const nodes = [
-    { x: 150, y: 120 }, { x: 350, y: 120 }, { x: 550, y: 120 },
-    { x: 150, y: 300 }, { x: 350, y: 300 }, { x: 550, y: 300 },
-    { x: 150, y: 480 }, { x: 350, y: 480 }, { x: 550, y: 480 },
+    { x: 180, y: 150 }, { x: 375, y: 150 }, { x: 570, y: 150 },
+    { x: 180, y: 325 }, { x: 375, y: 325 }, { x: 570, y: 325 },
+    { x: 180, y: 500 }, { x: 375, y: 500 }, { x: 570, y: 500 },
 ];
 
-const stateColors = {
-    fluide:  '#4ade80',
-    ralenti: '#fb923c',
-    bouchon: '#ef4444',
-};
-
-const states = ['fluide', 'ralenti', 'bouchon'];
+const stateColors = { fluide: '#4ade80', ralenti: '#fb923c', bouchon: '#ef4444' };
 
 const roads = [
-    // Horizontales
     { from: nodes[0], to: nodes[1], state: 'fluide'  },
     { from: nodes[1], to: nodes[2], state: 'ralenti' },
     { from: nodes[3], to: nodes[4], state: 'fluide'  },
     { from: nodes[4], to: nodes[5], state: 'bouchon' },
     { from: nodes[6], to: nodes[7], state: 'ralenti' },
     { from: nodes[7], to: nodes[8], state: 'fluide'  },
-    // Verticales
     { from: nodes[0], to: nodes[3], state: 'fluide'  },
     { from: nodes[1], to: nodes[4], state: 'bouchon' },
     { from: nodes[2], to: nodes[5], state: 'fluide'  },
@@ -36,84 +49,90 @@ const roads = [
     { from: nodes[5], to: nodes[8], state: 'ralenti' },
 ];
 
-const vehicleEmojis = ['🚗', '🚕', '🚙', '🚌', '🚑', '🚓'];
-
 const vehicles = roads.map(road => ({
     road,
     progress: Math.random(),
     speed: 0.002 + Math.random() * 0.003,
-    emoji: vehicleEmojis[Math.floor(Math.random() * vehicleEmojis.length)],
+    type: Math.random() > 0.8 ? 'truck' : 'car',
+}));
+
+const trafficLights = nodes.map(node => ({
+    node,
+    state: Math.random() > 0.5 ? 'green' : 'red',
+    timer: Math.floor(Math.random() * 200),
 }));
 
 function drawBackground() {
-    // Fond herbe
-    ctx.fillStyle = '#2d5a1b';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Texture herbe quadrillée
-    ctx.strokeStyle = '#336b20';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-    }
-    for (let y = 0; y < canvas.height; y += 40) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    if (bgImg.complete) {
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+    } else {
+        ctx.fillStyle = '#3a7d2c';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 }
 
 function drawRoads() {
     roads.forEach(road => {
-        // Asphalte
-        ctx.beginPath();
-        ctx.moveTo(road.from.x, road.from.y);
-        ctx.lineTo(road.to.x, road.to.y);
-        ctx.strokeStyle = '#555';
-        ctx.lineWidth = 28;
-        ctx.lineJoin = 'round';
-        ctx.stroke();
+        const dx = road.to.x - road.from.x;
+        const dy = road.to.y - road.from.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        const roadWidth = 36;
+        const nSegments = Math.ceil(len / 15);
 
-        // Bord route
-        ctx.beginPath();
-        ctx.moveTo(road.from.x, road.from.y);
-        ctx.lineTo(road.to.x, road.to.y);
-        ctx.strokeStyle = '#777';
-        ctx.lineWidth = 30;
-        ctx.stroke();
+        for (let i = 0; i < nSegments; i++) {
+            const t = (i + 0.5) / nSegments;
+            const cx = road.from.x + dx * t;
+            const cy = road.from.y + dy * t;
+            const segLen = len / nSegments * 1.05;
 
-        // Asphalte centre
-        ctx.beginPath();
-        ctx.moveTo(road.from.x, road.from.y);
-        ctx.lineTo(road.to.x, road.to.y);
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 26;
-        ctx.stroke();
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(angle);
 
-        // Marquage central coloré selon état
+            const img = (i % 2 === 0) ? roadImgWith : roadImgWithout;
+            if (img.complete) {
+                ctx.drawImage(img, -segLen / 2, -roadWidth / 2, segLen, roadWidth);
+            }
+
+            ctx.restore();
+        }
+
+        // Indicateur état coloré
         ctx.beginPath();
         ctx.moveTo(road.from.x, road.from.y);
         ctx.lineTo(road.to.x, road.to.y);
         ctx.strokeStyle = stateColors[road.state];
         ctx.lineWidth = 2;
-        ctx.setLineDash([12, 10]);
+        ctx.globalAlpha = 0.4;
         ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
     });
 }
 
 function drawNodes() {
     nodes.forEach(node => {
-        // Intersection asphalte
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, 18, 0, Math.PI * 2);
-        ctx.fillStyle = '#444';
-        ctx.fill();
+        ctx.fillStyle = '#555';
+        ctx.fillRect(node.x - 18, node.y - 18, 36, 36);
+    });
+}
 
-        // Halo
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, 22, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+function drawTrafficLights() {
+    trafficLights.forEach(tl => {
+        const img = tl.state === 'green' ? tlGreenImg : tlRedImg;
+        if (img.complete) {
+            ctx.drawImage(img, tl.node.x + 14, tl.node.y - 30, 16, 30);
+        }
+    });
+}
+
+function updateTrafficLights() {
+    trafficLights.forEach(tl => {
+        tl.timer++;
+        if (tl.timer > 300) {
+            tl.state = tl.state === 'green' ? 'red' : 'green';
+            tl.timer = 0;
+        }
     });
 }
 
@@ -121,8 +140,21 @@ function drawVehicles() {
     vehicles.forEach(v => {
         const x = v.road.from.x + (v.road.to.x - v.road.from.x) * v.progress;
         const y = v.road.from.y + (v.road.to.y - v.road.from.y) * v.progress;
-        ctx.font = '14px serif';
-        ctx.fillText(v.emoji, x - 8, y + 6);
+        const dx = v.road.to.x - v.road.from.x;
+        const dy = v.road.to.y - v.road.from.y;
+        const angle = Math.atan2(dy, dx);
+
+        const img = v.type === 'truck' ? truckImg : carImg;
+        const w = v.type === 'truck' ? 30 : 20;
+        const h = v.type === 'truck' ? 12 : 10;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        if (img.complete) {
+            ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        }
+        ctx.restore();
     });
 }
 
@@ -140,7 +172,7 @@ function updateDashboard() {
     document.getElementById('count-ralenti').textContent = counts.ralenti;
     document.getElementById('count-bouchon').textContent = counts.bouchon;
     const total = vehicles.length;
-    document.getElementById('bar-fluide').style.width = (counts.fluide / total * 100) + '%';
+    document.getElementById('bar-fluide').style.width  = (counts.fluide  / total * 100) + '%';
     document.getElementById('bar-ralenti').style.width = (counts.ralenti / total * 100) + '%';
     document.getElementById('bar-bouchon').style.width = (counts.bouchon / total * 100) + '%';
 }
@@ -153,8 +185,10 @@ function loop() {
     drawBackground();
     drawRoads();
     drawNodes();
+    drawTrafficLights();
     drawVehicles();
     updateVehicles();
+    updateTrafficLights();
     updateDashboard();
     animationId = requestAnimationFrame(loop);
 }
@@ -179,4 +213,12 @@ document.getElementById('btn-reset').addEventListener('click', () => {
     if (!running) { running = true; loop(); }
 });
 
-loop();
+// Attendre que toutes les images soient chargées
+let imagesLoaded = 0;
+const totalImages = 7;
+[bgImg, roadImgWith, roadImgWithout, carImg, truckImg, tlRedImg, tlGreenImg].forEach(img => {
+    img.onload = () => {
+        imagesLoaded++;
+        if (imagesLoaded === totalImages) loop();
+    };
+});
