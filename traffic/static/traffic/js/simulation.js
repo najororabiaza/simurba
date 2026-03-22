@@ -66,6 +66,14 @@ const canvas = document.getElementById('traffic-canvas');
         });
     }
 
+    function updateDashboard() {
+        const counts = { fluide: 0, ralenti: 0, bouchon: 0 };
+        vehicles.forEach(v => counts[v.road.state]++);
+        document.getElementById('count-fluide').textContent = counts.fluide;
+        document.getElementById('count-ralenti').textContent = counts.ralenti;
+        document.getElementById('count-bouchon').textContent = counts.bouchon;
+    }
+
     let running = true;
     let animationId;
 
@@ -75,6 +83,7 @@ const canvas = document.getElementById('traffic-canvas');
         drawNodes();
         drawVehicles();
         updateVehicles();
+        updateDashboard();
         animationId = requestAnimationFrame(loop);
     }
 
