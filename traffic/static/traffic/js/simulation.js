@@ -28,19 +28,49 @@ const canvas = document.getElementById('traffic-canvas');
         speed: 0.003 + Math.random() * 0.003,
     }));
 
+    function drawBackground() {
+        ctx.fillStyle = '#1a2a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#2a3a2a';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 50) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 50) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+    }
+    
     function drawRoads() {
         roads.forEach(road => {
+            // Route asphalte
+            ctx.beginPath();
+            ctx.moveTo(road.from.x, road.from.y);
+            ctx.lineTo(road.to.x, road.to.y);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 20;
+            ctx.stroke();
+    
+            // Couleur état
             ctx.beginPath();
             ctx.moveTo(road.from.x, road.from.y);
             ctx.lineTo(road.to.x, road.to.y);
             ctx.strokeStyle = stateColors[road.state];
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
             ctx.stroke();
+            ctx.setLineDash([]);
         });
     }
-
+    
     function drawNodes() {
         Object.values(nodes).forEach(node => {
+            // Halo
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, 20, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(233, 69, 96, 0.2)';
+            ctx.fill();
+            // Centre
             ctx.beginPath();
             ctx.arc(node.x, node.y, 10, 0, Math.PI * 2);
             ctx.fillStyle = '#e94560';
@@ -79,6 +109,7 @@ const canvas = document.getElementById('traffic-canvas');
 
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
         drawRoads();
         drawNodes();
         drawVehicles();
