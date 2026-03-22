@@ -21,13 +21,6 @@ const canvas = document.getElementById('traffic-canvas');
         bouchon: '#ef4444', // rouge
     }
 
-    // Véhicules — un par route, progress entre 0 et 1
-    const vehicles = roads.map(road => ({
-        road: road,
-        progress: Math.random(), // position initiale aléatoire
-        speed: 0.003 + Math.random() * 0.003,
-    }));
-
     function drawBackground() {
         ctx.fillStyle = '#1a2a1a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -78,14 +71,21 @@ const canvas = document.getElementById('traffic-canvas');
         });
     }
 
+    const vehicleEmojis = ['🚗', '🚕', '🚙', '🚌'];
+
+    const vehicles = roads.map(road => ({
+        road: road,
+        progress: Math.random(),
+        speed: 0.003 + Math.random() * 0.003,
+        emoji: vehicleEmojis[Math.floor(Math.random() * vehicleEmojis.length)],
+    }));
+
     function drawVehicles() {
         vehicles.forEach(v => {
             const x = v.road.from.x + (v.road.to.x - v.road.from.x) * v.progress;
             const y = v.road.from.y + (v.road.to.y - v.road.from.y) * v.progress;
-            ctx.beginPath();
-            ctx.arc(x, y, 6, 0, Math.PI * 2);
-            ctx.fillStyle = '#facc15';
-            ctx.fill();
+            ctx.font = '16px serif';
+            ctx.fillText(v.emoji, x - 8, y + 6);
         });
     }
 

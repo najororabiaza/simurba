@@ -30,17 +30,28 @@
         <canvas id="traffic-canvas" width="600" height="500"></canvas>
     </div>
     <div id="dashboard">
-        <h2>Tableau de bord</h2>
-        <p> Etat: <span id="status">en cours...</span></p>
-        <br>
-        <button id="btn-start">Demarrer</button>
-        <button id="btn-pause">Pauser</button>
-        <button id="btn-reset">Reinitialiser</button>
-        <br>
-        <p style="color:#aaa; font-size:13px; margin-bottom:8px;">Véhicules</p>
-        <p><span style="color:#4ade80">●</span> Fluide : <span id="count-fluide">0</span></p>
-        <p><span style="color:#fb923c">●</span> Ralenti : <span id="count-ralenti">0</span></p>
-        <p><span style="color:#ef4444">●</span> Bouchon : <span id="count-bouchon">0</span></p>
+        <h2>🚦 Simurba</h2>
+            <p>État : <span id="status">en cours...</span></p>
+            <br>
+            <button id="btn-start">▶ Démarrer</button>
+            <button id="btn-pause">⏸ Pauser</button>
+            <button id="btn-reset">↺ Réinitialiser</button>
+            <br>
+            <div style="margin-top:20px;">
+                <p style="color:#aaa; font-size:12px; margin-bottom:10px;">TRAFIC EN DIRECT</p>
+                <div style="margin-bottom:8px;">
+                    <p><span style="color:#4ade80">●</span> Fluide : <span id="count-fluide">0</span></p>
+                    <div style="background:#4ade80; height:4px; border-radius:2px; width:0%; transition:width 0.5s;" id="bar-fluide"></div>
+                </div>
+                <div style="margin-bottom:8px;">
+                    <p><span style="color:#fb923c">●</span> Ralenti : <span id="count-ralenti">0</span></p>
+                    <div style="background:#fb923c; height:4px; border-radius:2px; width:0%; transition:width 0.5s;" id="bar-ralenti"></div>
+                </div>
+                <div style="margin-bottom:8px;">
+                    <p><span style="color:#ef4444">●</span> Bouchon : <span id="count-bouchon">0</span></p>
+                    <div style="background:#ef4444; height:4px; border-radius:2px; width:0%; transition:width 0.5s;" id="bar-bouchon"></div>
+                </div>
+            </div>
     </div>
     <script src="{% static 'traffic/js/simulation.js' %}"></script>
 </body>
