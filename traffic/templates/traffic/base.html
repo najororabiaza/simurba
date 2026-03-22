@@ -19,5 +19,54 @@
         <h2>Tableau de bord</h2>
         <p>État : en attente...</p>
     </div>
+
+    <script>
+        const canvas = document.getElementById('traffic-canvas');
+        const ctx = canvas.getContext('2d');
+    
+        // Les 4 intersections (coins d'un carré)
+        const nodes = {
+            topLeft:     { x: 150, y: 100 },
+            topRight:    { x: 450, y: 100 },
+            bottomLeft:  { x: 150, y: 400 },
+            bottomRight: { x: 450, y: 400 },
+        };
+    
+        // Les routes entre intersections
+        const roads = [
+            { from: nodes.topLeft,     to: nodes.topRight    },
+            { from: nodes.bottomLeft,  to: nodes.bottomRight },
+            { from: nodes.topLeft,     to: nodes.bottomLeft  },
+            { from: nodes.topRight,    to: nodes.bottomRight },
+        ];
+    
+        function drawRoads() {
+            roads.forEach(road => {
+                ctx.beginPath();
+                ctx.moveTo(road.from.x, road.from.y);
+                ctx.lineTo(road.to.x, road.to.y);
+                ctx.strokeStyle = '#4ade80'; // vert = fluide
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            });
+        }
+    
+        function drawNodes() {
+            Object.values(nodes).forEach(node => {
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 10, 0, Math.PI * 2);
+                ctx.fillStyle = '#e94560';
+                ctx.fill();
+            });
+        }
+    
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRoads();
+            drawNodes();
+        }
+    
+        draw();
+    </script>
 </body>
 </html>
