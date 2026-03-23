@@ -13,17 +13,27 @@ roadImgWith.src = '/static/traffic/img/road2lanesCropWith.png';
 const roadImgWithout = new Image();
 roadImgWithout.src = '/static/traffic/img/road2lanesCropWithout.png';
 
-const carImg = new Image();
-carImg.src = '/static/traffic/img/carSmall2.png';
-
-const truckImg = new Image();
-truckImg.src = '/static/traffic/img/truck1Small.png';
+const carsImg = new Image();
+carsImg.src = '/static/traffic/img/bk_cars1.png';
 
 const tlRedImg = new Image();
 tlRedImg.src = '/static/traffic/img/trafficLight_red.png';
 
 const tlGreenImg = new Image();
 tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
+
+// Sprites des voitures dans le spritesheet (sx, sy, sw, sh)
+const carSprites = [
+    { sx: 188, sy: 16,  sw: 59, sh: 100 }, // Ambulance
+    { sx: 248, sy: 16,  sw: 48, sh: 100 }, // Rouge
+    { sx: 311, sy: 16,  sw: 46, sh: 100 }, // Bleu
+    { sx: 369, sy: 16,  sw: 48, sh: 100 }, // Jaune
+    { sx: 125, sy: 116, sw: 60, sh: 100 }, // Rose
+    { sx: 188, sy: 116, sw: 59, sh: 100 }, // Orange
+    { sx: 248, sy: 116, sw: 48, sh: 100 }, // Blanc
+    { sx: 125, sy: 347, sw: 40, sh: 84 }, // Rouge sport
+    { sx: 188, sy: 446, sw: 59, sh: 89  }, // Bleu sport
+];
 
 // Grille 3x3
 const nodes = [
@@ -53,7 +63,7 @@ const vehicles = roads.map(road => ({
     road,
     progress: Math.random(),
     speed: 0.002 + Math.random() * 0.003,
-    type: Math.random() > 0.8 ? 'truck' : 'car',
+    sprite: carSprites[Math.floor(Math.random() * carSprites.length)],
 }));
 
 const trafficLights = nodes.map(node => ({
@@ -89,12 +99,10 @@ function drawRoads() {
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(angle);
-
             const img = (i % 2 === 0) ? roadImgWith : roadImgWithout;
             if (img.complete) {
                 ctx.drawImage(img, -segLen / 2, -roadWidth / 2, segLen, roadWidth);
             }
-
             ctx.restore();
         }
 
@@ -142,17 +150,20 @@ function drawVehicles() {
         const y = v.road.from.y + (v.road.to.y - v.road.from.y) * v.progress;
         const dx = v.road.to.x - v.road.from.x;
         const dy = v.road.to.y - v.road.from.y;
-        const angle = Math.atan2(dy, dx);
+        const angle = Math.atan2(dy, dx) + Math.PI / 2;
 
-        const img = v.type === 'truck' ? truckImg : carImg;
-        const w = v.type === 'truck' ? 30 : 20;
-        const h = v.type === 'truck' ? 12 : 10;
+        const displayW = 16;
+        const displayH = 24;
 
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(angle);
-        if (img.complete) {
-            ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        if (carsImg.complete) {
+            ctx.drawImage(
+                carsImg,
+                v.sprite.sx, v.sprite.sy, v.sprite.sw, v.sprite.sh,
+                -displayW / 2, -displayH / 2, displayW, displayH
+            );
         }
         ctx.restore();
     });
@@ -213,10 +224,9 @@ document.getElementById('btn-reset').addEventListener('click', () => {
     if (!running) { running = true; loop(); }
 });
 
-// Attendre que toutes les images soient chargées
 let imagesLoaded = 0;
-const totalImages = 7;
-[bgImg, roadImgWith, roadImgWithout, carImg, truckImg, tlRedImg, tlGreenImg].forEach(img => {
+const totalImages = 6;
+[bgImg, roadImgWith, roadImgWithout, carsImg, tlRedImg, tlGreenImg].forEach(img => {
     img.onload = () => {
         imagesLoaded++;
         if (imagesLoaded === totalImages) loop();
