@@ -23,16 +23,16 @@ const tlGreenImg = new Image();
 tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
 
 // Sprites des voitures dans le spritesheet (sx, sy, sw, sh)
+// Coordonnees verifiees pixel par pixel sur le spritesheet 1076x1120
 const carSprites = [
-    { sx: 188, sy: 16,  sw: 59, sh: 100 }, // Ambulance
-    { sx: 248, sy: 16,  sw: 48, sh: 100 }, // Rouge
-    { sx: 311, sy: 16,  sw: 46, sh: 100 }, // Bleu
-    { sx: 369, sy: 16,  sw: 48, sh: 100 }, // Jaune
-    { sx: 125, sy: 116, sw: 60, sh: 100 }, // Rose
-    { sx: 188, sy: 116, sw: 59, sh: 100 }, // Orange
-    { sx: 248, sy: 116, sw: 48, sh: 100 }, // Blanc
-    { sx: 125, sy: 347, sw: 40, sh: 84 }, // Rouge sport
-    { sx: 188, sy: 446, sw: 59, sh: 89  }, // Bleu sport
+    { sx: 380, sy:  32, sw:  96, sh: 194 }, // Ambulance  (Row1 Col4)
+    { sx: 494, sy:  40, sw: 104, sh: 184 }, // Rouge      (Row1 Col5)
+    { sx: 616, sy:  40, sw: 104, sh: 184 }, // Bleu       (Row1 Col6)
+    { sx: 734, sy:  40, sw: 104, sh: 184 }, // Jaune      (Row1 Col7)
+    { sx: 254, sy: 240, sw: 102, sh: 199 }, // Rose       (Row2 Col3)
+    { sx: 378, sy: 240, sw: 102, sh: 198 }, // Orange     (Row2 Col4)
+    { sx: 494, sy: 246, sw: 104, sh: 184 }, // Blanc      (Row2 Col5)
+    { sx: 254, sy: 692, sw:  80, sh: 172 }, // Bleu sport (Row4 Col3)
 ];
 
 // Grille 3x3
@@ -152,8 +152,9 @@ function drawVehicles() {
         const dy = v.road.to.y - v.road.from.y;
         const angle = Math.atan2(dy, dx) + Math.PI / 2;
 
+        // Largeur/hauteur d'affichage preservant le ratio ~1:1.8 des sprites
         const displayW = 16;
-        const displayH = 24;
+        const displayH = 28;
 
         ctx.save();
         ctx.translate(x, y);
