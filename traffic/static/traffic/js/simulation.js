@@ -119,7 +119,7 @@ function drawTrafficLights() {
         const img = tl.state === 'green' ? tlGreenImg : tlRedImg;
         if (img.complete) {
             // Positionné légèrement au-dessus/à droite de chaque rond-point
-            ctx.drawImage(img, tl.node.x + 20, tl.node.y - 36, 16, 30);
+            ctx.drawImage(img, tl.node.x + 18, tl.node.y - 46, 28, 52);
         }
     });
 }
