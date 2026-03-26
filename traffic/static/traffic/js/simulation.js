@@ -3,15 +3,9 @@ const ctx = canvas.getContext('2d');
 canvas.width = 750;
 canvas.height = 650;
 
-// Chargement des images
+// Chargement des images (road2lanesCropWith/Without supprimés)
 const bgImg = new Image();
 bgImg.src = '/static/traffic/img/backgroundGrass.jpg';
-
-const roadImgWith = new Image();
-roadImgWith.src = '/static/traffic/img/road2lanesCropWith.png';
-
-const roadImgWithout = new Image();
-roadImgWithout.src = '/static/traffic/img/road2lanesCropWithout.png';
 
 const carsImg = new Image();
 carsImg.src = '/static/traffic/img/bk_cars1.png';
@@ -23,7 +17,6 @@ const tlGreenImg = new Image();
 tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
 
 // Sprites des voitures dans le spritesheet (sx, sy, sw, sh)
-// Coordonnees verifiees pixel par pixel sur le spritesheet 1076x1120
 const carSprites = [
     { sx: 380, sy:  32, sw:  96, sh: 194 }, // Ambulance  (Row1 Col4)
     { sx: 494, sy:  40, sw: 104, sh: 184 }, // Rouge      (Row1 Col5)
@@ -35,11 +28,14 @@ const carSprites = [
     { sx: 254, sy: 692, sw:  80, sh: 172 }, // Bleu sport (Row4 Col3)
 ];
 
-// Grille 3x3
+// Grille 3x3 — positions recalculées pour s'aligner sur les routes
+// du fond (backgroundGrass.jpg 1024×1024 → canvas 750×650)
+// Routes verticales bg: x≈150, 510, 900  → canvas x: 110, 374, 659
+// Routes horizontales bg: y≈180, 510, 880 → canvas y: 114, 324, 559
 const nodes = [
-    { x: 180, y: 150 }, { x: 375, y: 150 }, { x: 570, y: 150 },
-    { x: 180, y: 325 }, { x: 375, y: 325 }, { x: 570, y: 325 },
-    { x: 180, y: 500 }, { x: 375, y: 500 }, { x: 570, y: 500 },
+    { x: 110, y: 114 }, { x: 374, y: 114 }, { x: 659, y: 114 },
+    { x: 110, y: 324 }, { x: 374, y: 324 }, { x: 659, y: 324 },
+    { x: 110, y: 559 }, { x: 374, y: 559 }, { x: 659, y: 559 },
 ];
 
 const stateColors = { fluide: '#4ade80', ralenti: '#fb923c', bouchon: '#ef4444' };
@@ -81,47 +77,40 @@ function drawBackground() {
     }
 }
 
-function drawRoads() {
+// Indicateurs d'état colorés sur les routes du fond (sans images de route)
+function drawRoadStates() {
     roads.forEach(road => {
-        const dx = road.to.x - road.from.x;
-        const dy = road.to.y - road.from.y;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx);
-        const roadWidth = 36;
-        const nSegments = Math.ceil(len / 15);
-
-        for (let i = 0; i < nSegments; i++) {
-            const t = (i + 0.5) / nSegments;
-            const cx = road.from.x + dx * t;
-            const cy = road.from.y + dy * t;
-            const segLen = len / nSegments * 1.05;
-
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle);
-            const img = (i % 2 === 0) ? roadImgWith : roadImgWithout;
-            if (img.complete) {
-                ctx.drawImage(img, -segLen / 2, -roadWidth / 2, segLen, roadWidth);
-            }
-            ctx.restore();
-        }
-
-        // Indicateur état coloré
         ctx.beginPath();
         ctx.moveTo(road.from.x, road.from.y);
         ctx.lineTo(road.to.x, road.to.y);
         ctx.strokeStyle = stateColors[road.state];
-        ctx.lineWidth = 2;
-        ctx.globalAlpha = 0.4;
+        ctx.lineWidth = 5;
+        ctx.globalAlpha = 0.80;
         ctx.stroke();
         ctx.globalAlpha = 1;
     });
 }
 
-function drawNodes() {
+// Ronds-points semi-transparents sur les 9 intersections
+function drawRoundabouts() {
     nodes.forEach(node => {
-        ctx.fillStyle = '#555';
-        ctx.fillRect(node.x - 18, node.y - 18, 36, 36);
+        // Anneau extérieur
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 24, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(70, 70, 70, 0.30)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(40, 40, 40, 0.50)';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Îlot central vert
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 11, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(55, 130, 55, 0.65)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(30, 90, 30, 0.60)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
     });
 }
 
@@ -129,7 +118,8 @@ function drawTrafficLights() {
     trafficLights.forEach(tl => {
         const img = tl.state === 'green' ? tlGreenImg : tlRedImg;
         if (img.complete) {
-            ctx.drawImage(img, tl.node.x + 14, tl.node.y - 30, 16, 30);
+            // Positionné légèrement au-dessus/à droite de chaque rond-point
+            ctx.drawImage(img, tl.node.x + 20, tl.node.y - 36, 16, 30);
         }
     });
 }
@@ -145,16 +135,32 @@ function updateTrafficLights() {
 }
 
 function drawVehicles() {
+    // Décalage de voie : les voitures roulent sur la voie droite
+    const laneOffset = 12;
+
     vehicles.forEach(v => {
-        const x = v.road.from.x + (v.road.to.x - v.road.from.x) * v.progress;
-        const y = v.road.from.y + (v.road.to.y - v.road.from.y) * v.progress;
+        const rawX = v.road.from.x + (v.road.to.x - v.road.from.x) * v.progress;
+        const rawY = v.road.from.y + (v.road.to.y - v.road.from.y) * v.progress;
         const dx = v.road.to.x - v.road.from.x;
         const dy = v.road.to.y - v.road.from.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+
+        // Vecteur perpendiculaire droit (sens de la route)
+        const perpX = (-dy / len) * laneOffset;
+        const perpY = (dx / len) * laneOffset;
+
+        // Correction verticale pour les routes horizontales :
+        // sur une route horizontale (|dx| >> |dy|), les voitures remontent de 14px
+        const isHorizontal = Math.abs(dx) > Math.abs(dy);
+        const vertCorrection = isHorizontal ? -14 : 0;
+
+        const x = rawX + perpX;
+        const y = rawY + perpY + vertCorrection;
         const angle = Math.atan2(dy, dx) + Math.PI / 2;
 
-        // Largeur/hauteur d'affichage preservant le ratio ~1:1.8 des sprites
-        const displayW = 16;
-        const displayH = 28;
+        // Taille légèrement augmentée pour correspondre aux routes du fond
+        const displayW = 22;
+        const displayH = 38;
 
         ctx.save();
         ctx.translate(x, y);
@@ -195,8 +201,8 @@ let animationId;
 function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
-    drawRoads();
-    drawNodes();
+    drawRoadStates();
+    drawRoundabouts();
     drawTrafficLights();
     drawVehicles();
     updateVehicles();
@@ -225,9 +231,10 @@ document.getElementById('btn-reset').addEventListener('click', () => {
     if (!running) { running = true; loop(); }
 });
 
+// 4 images uniquement (road2lanesCropWith/Without supprimés)
 let imagesLoaded = 0;
-const totalImages = 6;
-[bgImg, roadImgWith, roadImgWithout, carsImg, tlRedImg, tlGreenImg].forEach(img => {
+const totalImages = 4;
+[bgImg, carsImg, tlRedImg, tlGreenImg].forEach(img => {
     img.onload = () => {
         imagesLoaded++;
         if (imagesLoaded === totalImages) loop();
