@@ -7,52 +7,184 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { display: flex; height: 100vh; font-family: sans-serif; background: #1a1a2e; color: white; }
-        #canvas-zone { flex: 3; display: flex; align-items: center; justify-content: center; border-right: 2px solid #333; }
-        #dashboard { flex: 1; padding: 20px; background: #16213e; }
-        h2 { margin-bottom: 20px; color: #e94560; }
+
+        #canvas-zone {
+            flex: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 2px solid #333;
+        }
+
+        /* ── Barre latérale ── */
+        #dashboard {
+            flex: 1;
+            padding: 16px;
+            background: #16213e;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        h2 { color: #e94560; font-size: 18px; }
+
+        /* ── Sections ── */
+        .section {
+            background: #0f3460;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        /* ── Boutons de contrôle ── */
         button {
             display: block;
             width: 100%;
-            margin-bottom: 10px;
-            padding: 10px;
+            margin-bottom: 8px;
+            padding: 9px;
             background: #e94560;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
         }
         button:hover { background: #c73652; }
+        button:last-child { margin-bottom: 0; }
+
+        /* ── Curseur de vitesse ── */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .slider-row label { font-size: 12px; color: #ccc; white-space: nowrap; }
+        .slider-row input[type=range] { flex: 1; accent-color: #e94560; }
+        .slider-row span { font-size: 12px; color: #e94560; min-width: 28px; text-align: right; }
+
+        /* ── Stat items ── */
+        .stat-item { margin-bottom: 10px; }
+        .stat-item:last-child { margin-bottom: 0; }
+        .stat-label { font-size: 13px; margin-bottom: 4px; }
+        .stat-bar-bg { background: #1a1a2e; height: 5px; border-radius: 3px; overflow: hidden; }
+        .stat-bar { height: 5px; border-radius: 3px; width: 0%; transition: width 0.5s; }
+
+
+        /* ── État général ── */
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        #status { color: #4ade80; font-weight: 600; }
+
+        /* ── Horloge ── */
+        #clock {
+            font-size: 20px;
+            font-weight: 700;
+            color: #e2e8f0;
+            letter-spacing: 0.05em;
+            text-align: center;
+            margin: 2px 0;
+        }
+        .clock-sub {
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div id="canvas-zone">
-        <canvas id="traffic-canvas" width="600" height="500"></canvas>
+        <canvas id="traffic-canvas"></canvas>
     </div>
+
     <div id="dashboard">
-        <h2>🚦 Simurba</h2>
-            <p>État : <span id="status">en cours...</span></p>
-            <br>
+
+        <!-- ── En-tête ── -->
+        <div>
+            <h2>🚦 Simurba</h2>
+        </div>
+
+        <!-- ── Section 1 : Contrôles ── -->
+        <div class="section">
+            <p class="section-title">Contrôles</p>
+
+            <div class="status-row" style="margin-bottom:10px;">
+                <span style="font-size:12px; color:#aaa;">État :</span>
+                <span id="status">en cours...</span>
+            </div>
+
             <button id="btn-start">▶ Démarrer</button>
             <button id="btn-pause">⏸ Pauser</button>
             <button id="btn-reset">↺ Réinitialiser</button>
-            <br>
-            <div style="margin-top:20px;">
-                <p style="color:#aaa; font-size:12px; margin-bottom:10px;">TRAFIC EN DIRECT</p>
-                <div style="margin-bottom:8px;">
-                    <p><span style="color:#4ade80">●</span> Fluide : <span id="count-fluide">0</span></p>
-                    <div style="background:#4ade80; height:4px; border-radius:2px; width:0%; transition:width 0.5s;" id="bar-fluide"></div>
-                </div>
-                <div style="margin-bottom:8px;">
-                    <p><span style="color:#fb923c">●</span> Ralenti : <span id="count-ralenti">0</span></p>
-                    <div style="background:#fb923c; height:4px; border-radius:2px; width:0%; transition:width 0.5s;" id="bar-ralenti"></div>
-                </div>
-                <div style="margin-bottom:8px;">
-                    <p><span style="color:#ef4444">●</span> Bouchon : <span id="count-bouchon">0</span></p>
-                    <div style="background:#ef4444; height:4px; border-radius:2px; width:0%; transition:width 0.5s;" id="bar-bouchon"></div>
+
+            <!-- Curseur de vitesse — lie speedFactor dans simulation.js -->
+            <div class="slider-row">
+                <label>Vitesse</label>
+                <input type="range" id="speed-slider" min="1" max="5" step="0.5" value="1">
+                <span id="speed-label">×1</span>
+            </div>
+        </div>
+
+        <!-- ── Section 2 : Horloge de simulation ── -->
+        <div class="section">
+            <p class="section-title">Temps de simulation</p>
+            <div id="clock">00:00</div>
+            <p class="clock-sub">mm:ss écoulées</p>
+        </div>
+
+        <!-- ── Section 3 : Trafic en direct ── -->
+        <div class="section">
+            <p class="section-title">Trafic en direct</p>
+
+            <!-- Nombre total de véhicules -->
+            <div class="stat-item">
+                <div class="stat-label" style="color:#94a3b8;">
+                    🚗 Véhicules actifs : <strong id="count-total">0</strong>
                 </div>
             </div>
-    </div>
+
+            <div class="stat-item">
+                <div class="stat-label">
+                    <span style="color:#4ade80;">●</span> Fluide : <span id="count-fluide">0</span>
+                </div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar" id="bar-fluide" style="background:#4ade80;"></div>
+                </div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-label">
+                    <span style="color:#fb923c;">●</span> Ralenti : <span id="count-ralenti">0</span>
+                </div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar" id="bar-ralenti" style="background:#fb923c;"></div>
+                </div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-label">
+                    <span style="color:#ef4444;">●</span> Bouchon : <span id="count-bouchon">0</span>
+                </div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar" id="bar-bouchon" style="background:#ef4444;"></div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /dashboard -->
+
     <script src="{% static 'traffic/js/simulation.js' %}"></script>
 </body>
 </html>

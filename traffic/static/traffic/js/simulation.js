@@ -3,7 +3,9 @@ const ctx = canvas.getContext('2d');
 canvas.width = 750;
 canvas.height = 650;
 
-// Chargement des images (road2lanesCropWith/Without supprimés)
+// ─────────────────────────────────────────────────────────────
+//  Chargement des images
+// ─────────────────────────────────────────────────────────────
 const bgImg = new Image();
 bgImg.src = '/static/traffic/img/backgroundGrass.jpg';
 
@@ -16,22 +18,23 @@ tlRedImg.src = '/static/traffic/img/trafficLight_red.png';
 const tlGreenImg = new Image();
 tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
 
-// Sprites des voitures dans le spritesheet (sx, sy, sw, sh)
+// ─────────────────────────────────────────────────────────────
+//  Sprites — bk_cars1.png (image actuelle dans /static/img/)
+// ─────────────────────────────────────────────────────────────
 const carSprites = [
-    { sx: 380, sy:  32, sw:  96, sh: 194 }, // Ambulance  (Row1 Col4)
-    { sx: 494, sy:  40, sw: 104, sh: 184 }, // Rouge      (Row1 Col5)
-    { sx: 616, sy:  40, sw: 104, sh: 184 }, // Bleu       (Row1 Col6)
-    { sx: 734, sy:  40, sw: 104, sh: 184 }, // Jaune      (Row1 Col7)
-    { sx: 254, sy: 240, sw: 102, sh: 199 }, // Rose       (Row2 Col3)
-    { sx: 378, sy: 240, sw: 102, sh: 198 }, // Orange     (Row2 Col4)
-    { sx: 494, sy: 246, sw: 104, sh: 184 }, // Blanc      (Row2 Col5)
-    { sx: 254, sy: 692, sw:  80, sh: 172 }, // Bleu sport (Row4 Col3)
+    { sx: 380, sy:  32, sw:  96, sh: 194 }, // Ambulance
+    { sx: 494, sy:  40, sw: 104, sh: 184 }, // Rouge
+    { sx: 616, sy:  40, sw: 104, sh: 184 }, // Bleu
+    { sx: 734, sy:  40, sw: 104, sh: 184 }, // Jaune
+    { sx: 254, sy: 240, sw: 102, sh: 199 }, // Rose
+    { sx: 378, sy: 240, sw: 102, sh: 198 }, // Orange
+    { sx: 494, sy: 246, sw: 104, sh: 184 }, // Blanc
+    { sx: 254, sy: 692, sw:  80, sh: 172 }, // Bleu sport
 ];
 
-// Grille 3x3 — positions recalculées pour s'aligner sur les routes
-// du fond (backgroundGrass.jpg 1024×1024 → canvas 750×650)
-// Routes verticales bg: x≈150, 510, 900  → canvas x: 110, 374, 659
-// Routes horizontales bg: y≈180, 510, 880 → canvas y: 114, 324, 559
+// ─────────────────────────────────────────────────────────────
+//  Réseau routier — grille 3×3 alignée sur le fond city
+// ─────────────────────────────────────────────────────────────
 const nodes = [
     { x: 110, y: 114 }, { x: 374, y: 114 }, { x: 659, y: 114 },
     { x: 110, y: 324 }, { x: 374, y: 324 }, { x: 659, y: 324 },
@@ -55,10 +58,12 @@ const roads = [
     { from: nodes[5], to: nodes[8], state: 'ralenti' },
 ];
 
+// Chaque route reçoit un véhicule au départ
 const vehicles = roads.map(road => ({
     road,
     progress: Math.random(),
-    speed: 0.002 + Math.random() * 0.003,
+    // baseSpeed est la vitesse de référence à ×1 — multipliée par speedFactor à chaque frame
+    baseSpeed: 0.002 + Math.random() * 0.003,
     sprite: carSprites[Math.floor(Math.random() * carSprites.length)],
 }));
 
@@ -68,6 +73,41 @@ const trafficLights = nodes.map(node => ({
     timer: Math.floor(Math.random() * 200),
 }));
 
+// ─────────────────────────────────────────────────────────────
+//  Contrôle de vitesse — lié au slider #speed-slider du HTML
+// ─────────────────────────────────────────────────────────────
+let speedFactor = 1;
+
+const speedSlider = document.getElementById('speed-slider');
+const speedLabel  = document.getElementById('speed-label');
+
+speedSlider.addEventListener('input', () => {
+    speedFactor = parseFloat(speedSlider.value);
+    speedLabel.textContent = '×' + speedFactor;
+});
+
+// ─────────────────────────────────────────────────────────────
+//  Horloge de simulation
+// ─────────────────────────────────────────────────────────────
+let simSeconds = 0;    // secondes écoulées (temps de simulation)
+let frameAcc   = 0;    // accumulateur de frames
+const FPS_REF  = 60;   // 60 frames = 1 seconde de référence
+
+function updateClock() {
+    // Avance plus vite quand speedFactor est élevé
+    frameAcc += speedFactor;
+    if (frameAcc >= FPS_REF) {
+        simSeconds++;
+        frameAcc -= FPS_REF;
+    }
+    const mm = String(Math.floor(simSeconds / 60)).padStart(2, '0');
+    const ss = String(simSeconds % 60).padStart(2, '0');
+    document.getElementById('clock').textContent = mm + ':' + ss;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Dessin
+// ─────────────────────────────────────────────────────────────
 function drawBackground() {
     if (bgImg.complete) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
@@ -77,7 +117,6 @@ function drawBackground() {
     }
 }
 
-// Indicateurs d'état colorés sur les routes du fond (sans images de route)
 function drawRoadStates() {
     roads.forEach(road => {
         ctx.beginPath();
@@ -91,10 +130,8 @@ function drawRoadStates() {
     });
 }
 
-// Ronds-points semi-transparents sur les 9 intersections
 function drawRoundabouts() {
     nodes.forEach(node => {
-        // Anneau extérieur
         ctx.beginPath();
         ctx.arc(node.x, node.y, 24, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(70, 70, 70, 0.30)';
@@ -103,7 +140,6 @@ function drawRoundabouts() {
         ctx.lineWidth = 2.5;
         ctx.stroke();
 
-        // Îlot central vert
         ctx.beginPath();
         ctx.arc(node.x, node.y, 11, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(55, 130, 55, 0.65)';
@@ -118,24 +154,12 @@ function drawTrafficLights() {
     trafficLights.forEach(tl => {
         const img = tl.state === 'green' ? tlGreenImg : tlRedImg;
         if (img.complete) {
-            // Positionné légèrement au-dessus/à droite de chaque rond-point
             ctx.drawImage(img, tl.node.x + 18, tl.node.y - 46, 28, 52);
         }
     });
 }
 
-function updateTrafficLights() {
-    trafficLights.forEach(tl => {
-        tl.timer++;
-        if (tl.timer > 300) {
-            tl.state = tl.state === 'green' ? 'red' : 'green';
-            tl.timer = 0;
-        }
-    });
-}
-
 function drawVehicles() {
-    // Décalage de voie : les voitures roulent sur la voie droite
     const laneOffset = 12;
 
     vehicles.forEach(v => {
@@ -145,12 +169,9 @@ function drawVehicles() {
         const dy = v.road.to.y - v.road.from.y;
         const len = Math.sqrt(dx * dx + dy * dy);
 
-        // Vecteur perpendiculaire droit (sens de la route)
         const perpX = (-dy / len) * laneOffset;
         const perpY = (dx / len) * laneOffset;
 
-        // Correction verticale pour les routes horizontales :
-        // sur une route horizontale (|dx| >> |dy|), les voitures remontent de 14px
         const isHorizontal = Math.abs(dx) > Math.abs(dy);
         const vertCorrection = isHorizontal ? -14 : 0;
 
@@ -158,7 +179,6 @@ function drawVehicles() {
         const y = rawY + perpY + vertCorrection;
         const angle = Math.atan2(dy, dx) + Math.PI / 2;
 
-        // Taille légèrement augmentée pour correspondre aux routes du fond
         const displayW = 22;
         const displayH = 38;
 
@@ -176,9 +196,24 @@ function drawVehicles() {
     });
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Mises à jour logiques
+// ─────────────────────────────────────────────────────────────
+function updateTrafficLights() {
+    trafficLights.forEach(tl => {
+        // Le timer des feux avance aussi selon speedFactor
+        tl.timer += speedFactor;
+        if (tl.timer > 300) {
+            tl.state = tl.state === 'green' ? 'red' : 'green';
+            tl.timer = 0;
+        }
+    });
+}
+
 function updateVehicles() {
     vehicles.forEach(v => {
-        v.progress += v.speed;
+        // baseSpeed × speedFactor : le slider accélère tous les véhicules
+        v.progress += v.baseSpeed * speedFactor;
         if (v.progress > 1) v.progress = 0;
     });
 }
@@ -186,15 +221,26 @@ function updateVehicles() {
 function updateDashboard() {
     const counts = { fluide: 0, ralenti: 0, bouchon: 0 };
     vehicles.forEach(v => counts[v.road.state]++);
-    document.getElementById('count-fluide').textContent = counts.fluide;
+
+    const total = vehicles.length;
+
+    // Nombre total de véhicules
+    document.getElementById('count-total').textContent = total;
+
+    // Compteurs par état
+    document.getElementById('count-fluide').textContent  = counts.fluide;
     document.getElementById('count-ralenti').textContent = counts.ralenti;
     document.getElementById('count-bouchon').textContent = counts.bouchon;
-    const total = vehicles.length;
+
+    // Barres de progression
     document.getElementById('bar-fluide').style.width  = (counts.fluide  / total * 100) + '%';
     document.getElementById('bar-ralenti').style.width = (counts.ralenti / total * 100) + '%';
     document.getElementById('bar-bouchon').style.width = (counts.bouchon / total * 100) + '%';
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Boucle principale
+// ─────────────────────────────────────────────────────────────
 let running = true;
 let animationId;
 
@@ -208,9 +254,13 @@ function loop() {
     updateVehicles();
     updateTrafficLights();
     updateDashboard();
+    updateClock();
     animationId = requestAnimationFrame(loop);
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Événements des boutons
+// ─────────────────────────────────────────────────────────────
 document.getElementById('btn-start').addEventListener('click', () => {
     if (!running) {
         running = true;
@@ -226,12 +276,18 @@ document.getElementById('btn-pause').addEventListener('click', () => {
 });
 
 document.getElementById('btn-reset').addEventListener('click', () => {
+    // Remet les véhicules au départ et réinitialise l'horloge
     vehicles.forEach(v => { v.progress = 0; });
+    simSeconds = 0;
+    frameAcc   = 0;
+    document.getElementById('clock').textContent = '00:00';
     document.getElementById('status').textContent = 'en cours...';
     if (!running) { running = true; loop(); }
 });
 
-// 4 images uniquement (road2lanesCropWith/Without supprimés)
+// ─────────────────────────────────────────────────────────────
+//  Lancement après chargement des 4 images
+// ─────────────────────────────────────────────────────────────
 let imagesLoaded = 0;
 const totalImages = 4;
 [bgImg, carsImg, tlRedImg, tlGreenImg].forEach(img => {
