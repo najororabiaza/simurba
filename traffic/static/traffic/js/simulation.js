@@ -19,7 +19,7 @@ const tlGreenImg = new Image();
 tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
 
 // ─────────────────────────────────────────────────────────────
-//  Sprites — bk_cars1.png (image actuelle dans /static/img/)
+//  Sprites — bk_cars1.png
 // ─────────────────────────────────────────────────────────────
 const carSprites = [
     { sx: 380, sy:  32, sw:  96, sh: 194 }, // Ambulance
@@ -58,11 +58,9 @@ const roads = [
     { from: nodes[5], to: nodes[8], state: 'ralenti' },
 ];
 
-// Chaque route reçoit un véhicule au départ
 const vehicles = roads.map(road => ({
     road,
     progress: Math.random(),
-    // baseSpeed est la vitesse de référence à ×1 — multipliée par speedFactor à chaque frame
     baseSpeed: 0.002 + Math.random() * 0.003,
     sprite: carSprites[Math.floor(Math.random() * carSprites.length)],
 }));
@@ -74,7 +72,7 @@ const trafficLights = nodes.map(node => ({
 }));
 
 // ─────────────────────────────────────────────────────────────
-//  Contrôle de vitesse — lié au slider #speed-slider du HTML
+//  Contrôle de vitesse
 // ─────────────────────────────────────────────────────────────
 let speedFactor = 1;
 
@@ -89,12 +87,11 @@ speedSlider.addEventListener('input', () => {
 // ─────────────────────────────────────────────────────────────
 //  Horloge de simulation
 // ─────────────────────────────────────────────────────────────
-let simSeconds = 0;    // secondes écoulées (temps de simulation)
-let frameAcc   = 0;    // accumulateur de frames
-const FPS_REF  = 60;   // 60 frames = 1 seconde de référence
+let simSeconds = 0;
+let frameAcc   = 0;
+const FPS_REF  = 60;
 
 function updateClock() {
-    // Avance plus vite quand speedFactor est élevé
     frameAcc += speedFactor;
     if (frameAcc >= FPS_REF) {
         simSeconds++;
@@ -201,7 +198,6 @@ function drawVehicles() {
 // ─────────────────────────────────────────────────────────────
 function updateTrafficLights() {
     trafficLights.forEach(tl => {
-        // Le timer des feux avance aussi selon speedFactor
         tl.timer += speedFactor;
         if (tl.timer > 300) {
             tl.state = tl.state === 'green' ? 'red' : 'green';
@@ -212,7 +208,6 @@ function updateTrafficLights() {
 
 function updateVehicles() {
     vehicles.forEach(v => {
-        // baseSpeed × speedFactor : le slider accélère tous les véhicules
         v.progress += v.baseSpeed * speedFactor;
         if (v.progress > 1) v.progress = 0;
     });
@@ -224,15 +219,11 @@ function updateDashboard() {
 
     const total = vehicles.length;
 
-    // Nombre total de véhicules
-    document.getElementById('count-total').textContent = total;
-
-    // Compteurs par état
+    document.getElementById('count-total').textContent   = total;
     document.getElementById('count-fluide').textContent  = counts.fluide;
     document.getElementById('count-ralenti').textContent = counts.ralenti;
     document.getElementById('count-bouchon').textContent = counts.bouchon;
 
-    // Barres de progression
     document.getElementById('bar-fluide').style.width  = (counts.fluide  / total * 100) + '%';
     document.getElementById('bar-ralenti').style.width = (counts.ralenti / total * 100) + '%';
     document.getElementById('bar-bouchon').style.width = (counts.bouchon / total * 100) + '%';
@@ -265,7 +256,7 @@ document.getElementById('btn-start').addEventListener('click', () => {
     if (!running) {
         running = true;
         document.getElementById('status').textContent = 'en cours...';
-        document.getElementById('status').style.color = '#4ade80'; // vert
+        document.getElementById('status').style.color = '#4ade80';
         loop();
     }
 });
@@ -274,28 +265,40 @@ document.getElementById('btn-pause').addEventListener('click', () => {
     running = false;
     cancelAnimationFrame(animationId);
     document.getElementById('status').textContent = 'en pause';
-    document.getElementById('status').style.color = '#fb923c'; // orange
+    document.getElementById('status').style.color = '#fb923c';
 });
 
 document.getElementById('btn-reset').addEventListener('click', () => {
-    // Remet les véhicules au départ et réinitialise l'horloge
     vehicles.forEach(v => { v.progress = 0; });
     simSeconds = 0;
     frameAcc   = 0;
     document.getElementById('clock').textContent = '00:00';
     document.getElementById('status').textContent = 'en cours...';
-    document.getElementById('status').style.color = '#4ade80'; // vert
+    document.getElementById('status').style.color = '#4ade80';
     if (!running) { running = true; loop(); }
 });
 
 // ─────────────────────────────────────────────────────────────
-//  Lancement après chargement des 4 images
+//  Lancement : cache l'overlay quand les 4 images sont prêtes
 // ─────────────────────────────────────────────────────────────
 let imagesLoaded = 0;
 const totalImages = 4;
+const loadStart = Date.now();// heure de début du chargement
+
 [bgImg, carsImg, tlRedImg, tlGreenImg].forEach(img => {
     img.onload = () => {
         imagesLoaded++;
-        if (imagesLoaded === totalImages) loop();
+        if (imagesLoaded === totalImages) {
+            const elapsed   = Date.now() - loadStart;
+            const minDelay  = 3000;// 3 secondes minimum
+            const remaining = Math.max(0, minDelay - elapsed);
+
+            setTimeout(() => {
+                const overlay = document.getElementById('loading-overlay');
+                overlay.classList.add('hidden');
+                setTimeout(() => overlay.remove(), 400);
+                loop();
+            }, remaining);
+        }
     };
 });

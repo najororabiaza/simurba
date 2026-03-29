@@ -31,6 +31,7 @@
 
         #canvas-zone {
             flex: 3;
+            position: relative;         /* nécessaire pour l'overlay absolu */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -39,18 +40,36 @@
             padding: 12px;
         }
 
-        /* Le canvas se redimensionne dans son conteneur */
         #traffic-canvas {
             max-width: 100%;
             max-height: 100%;
-            /* Les dimensions réelles sont fixées par simulation.js
-               mais on force le canvas à ne jamais dépasser son parent */
             object-fit: contain;
+        }
+
+        /* ── Overlay de chargement ── */
+        #loading-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a1a2e;
+            z-index: 10;
+            transition: opacity 0.4s ease;
+        }
+
+        #loading-overlay img {
+            width: clamp(300px, 50vw, 500px);
+        }
+
+        #loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
 
         /* ── Dashboard ── */
         #dashboard {
-            flex: 0 0 280px;       /* largeur fixe desktop */
+            flex: 0 0 280px;
             padding: 16px;
             background: #16213e;
             overflow-y: auto;
@@ -61,7 +80,6 @@
 
         /* ─────────────────────────────────────────
            LAYOUT TABLETTE (768px – 1023px)
-           Canvas en haut, dashboard en bas scrollable
         ───────────────────────────────────────── */
         @media (max-width: 1023px) {
             body {
@@ -77,7 +95,6 @@
                 padding: 16px;
                 flex: none;
                 width: 100%;
-                /* Hauteur proportionnelle à la largeur de l'écran */
                 height: 60vw;
                 max-height: 520px;
                 min-height: 300px;
@@ -86,14 +103,12 @@
             #dashboard {
                 flex: none;
                 width: 100%;
-                /* Sur tablette le dashboard s'étale en grille 2 colonnes */
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 12px;
                 padding: 16px;
             }
 
-            /* Le titre prend toute la largeur en premier */
             #dashboard > div:first-child {
                 grid-column: 1 / -1;
             }
@@ -101,7 +116,6 @@
 
         /* ─────────────────────────────────────────
            LAYOUT MOBILE (< 768px)
-           Tout en colonne, une section par ligne
         ───────────────────────────────────────── */
         @media (max-width: 767px) {
             body {
@@ -114,7 +128,7 @@
                 border-right: none;
                 border-bottom: 2px solid #333;
                 padding: 10px;
-                height: 75vw;      /* presque carré sur mobile */
+                height: 75vw;
                 max-height: 400px;
                 min-height: 220px;
             }
@@ -130,24 +144,20 @@
 
         /* ─────────────────────────────────────────
            LAYOUT GRAND ÉCRAN (≥ 1440px)
-           Dashboard un peu plus large
         ───────────────────────────────────────── */
         @media (min-width: 1440px) {
-            #dashboard {
-                flex: 0 0 320px;
-            }
+            #dashboard { flex: 0 0 320px; }
         }
 
         /* ─────────────────────────────────────────
-           COMPOSANTS (communs à toutes les tailles)
+           COMPOSANTS
         ───────────────────────────────────────── */
 
         h2 {
             color: #e94560;
-            font-size: clamp(15px, 2vw, 20px);  /* adaptatif */
+            font-size: clamp(15px, 2vw, 20px);
         }
 
-        /* ── Sections ── */
         .section {
             background: #0f3460;
             border-radius: 8px;
@@ -178,12 +188,12 @@
         }
         button:last-of-type { margin-bottom: 0; }
 
-        #btn-start  { background: #22c55e; }
-        #btn-start:hover  { background: #16a34a; }
-        #btn-pause  { background: #fb923c; }
-        #btn-pause:hover  { background: #ea7a1e; }
-        #btn-reset  { background: #64748b; }
-        #btn-reset:hover  { background: #475569; }
+        #btn-start       { background: #22c55e; }
+        #btn-start:hover { background: #16a34a; }
+        #btn-pause       { background: #fb923c; }
+        #btn-pause:hover { background: #ea7a1e; }
+        #btn-reset       { background: #64748b; }
+        #btn-reset:hover { background: #475569; }
 
         /* ── Slider de vitesse ── */
         .slider-row {
@@ -192,22 +202,9 @@
             gap: 8px;
             margin-top: 8px;
         }
-        .slider-row label {
-            font-size: 12px;
-            color: #ccc;
-            white-space: nowrap;
-        }
-        .slider-row input[type=range] {
-            flex: 1;
-            accent-color: #e94560;
-            min-width: 0;   /* évite le débordement flexbox */
-        }
-        .slider-row span {
-            font-size: 12px;
-            color: #e94560;
-            min-width: 28px;
-            text-align: right;
-        }
+        .slider-row label { font-size: 12px; color: #ccc; white-space: nowrap; }
+        .slider-row input[type=range] { flex: 1; accent-color: #e94560; min-width: 0; }
+        .slider-row span { font-size: 12px; color: #e94560; min-width: 28px; text-align: right; }
 
         /* ── Ligne d'état ── */
         .status-row {
@@ -217,7 +214,7 @@
             font-size: 13px;
             margin-bottom: 10px;
         }
-        #status { font-weight: 600; color: #4ade80; }
+        #status { font-weight: 600; }
 
         /* ── Horloge ── */
         #clock {
@@ -228,41 +225,53 @@
             text-align: center;
             margin: 2px 0;
         }
-        .clock-sub {
-            font-size: 11px;
-            color: #666;
-            text-align: center;
-        }
+        .clock-sub { font-size: 11px; color: #666; text-align: center; }
 
         /* ── Stats trafic ── */
         .stat-item { margin-bottom: 10px; }
         .stat-item:last-child { margin-bottom: 0; }
-        .stat-label {
-            font-size: clamp(11px, 1.4vw, 13px);
-            margin-bottom: 4px;
-        }
-        .stat-bar-bg {
-            background: #1a1a2e;
-            height: 5px;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        .stat-bar {
-            height: 5px;
-            border-radius: 3px;
-            width: 0%;
-            transition: width 0.5s;
-        }
+        .stat-label { font-size: clamp(11px, 1.4vw, 13px); margin-bottom: 4px; }
+        .stat-bar-bg { background: #1a1a2e; height: 5px; border-radius: 3px; overflow: hidden; }
+        .stat-bar { height: 5px; border-radius: 3px; width: 0%; transition: width 0.5s; }
 
-        /* ── Scrollbar discrète (dashboard) ── */
+        /* ── Scrollbar discrète ── */
         #dashboard::-webkit-scrollbar { width: 4px; }
         #dashboard::-webkit-scrollbar-track { background: transparent; }
         #dashboard::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+        /* ── Animations d'apparition au chargement ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeLeft {
+            from { opacity: 0; transform: translateX(24px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Canvas zone : glisse depuis la gauche */
+        #canvas-zone {
+            animation: fadeUp 0.6s ease both;
+            animation-delay: 0.1s;
+        }
+
+        /* Dashboard : glisse depuis la droite, légèrement après */
+        #dashboard > div:nth-child(1) { animation: fadeLeft 0.8s ease both; animation-delay: 0.4s; }
+        #dashboard > div:nth-child(2) { animation: fadeLeft 0.8s ease both; animation-delay: 0.45s; }
+        #dashboard > div:nth-child(3) { animation: fadeLeft 0.8s ease both; animation-delay: 0.6s; }
+        #dashboard > div:nth-child(4) { animation: fadeLeft 0.8s ease both; animation-delay: 0.85s; }
     </style>
 </head>
 <body>
 
     <div id="canvas-zone">
+
+        <!-- Overlay de chargement : visible jusqu'à ce que les 4 images soient prêtes -->
+        <div id="loading-overlay">
+            <img src="{% static 'traffic/img/loading.gif' %}" alt="Chargement...">
+        </div>
+
         <canvas id="traffic-canvas"></canvas>
     </div>
 
