@@ -3,10 +3,31 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simurba</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚦</text></svg>">
     <style>
+        /* ── Reset ── */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { display: flex; height: 100vh; font-family: sans-serif; background: #1a1a2e; color: white; }
+
+        /* ── Base ── */
+        html, body {
+            height: 100%;
+            font-family: sans-serif;
+            background: #1a1a2e;
+            color: white;
+        }
+
+        /* ─────────────────────────────────────────
+           LAYOUT DESKTOP (≥ 1024px)
+           Canvas à gauche, dashboard à droite
+        ───────────────────────────────────────── */
+        body {
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            overflow: hidden;
+        }
 
         #canvas-zone {
             flex: 3;
@@ -14,22 +35,117 @@
             align-items: center;
             justify-content: center;
             border-right: 2px solid #333;
+            overflow: hidden;
+            padding: 12px;
         }
 
-        #status { font-weight: 600; }
+        /* Le canvas se redimensionne dans son conteneur */
+        #traffic-canvas {
+            max-width: 100%;
+            max-height: 100%;
+            /* Les dimensions réelles sont fixées par simulation.js
+               mais on force le canvas à ne jamais dépasser son parent */
+            object-fit: contain;
+        }
 
-        /* ── Barre latérale ── */
+        /* ── Dashboard ── */
         #dashboard {
-            flex: 1;
+            flex: 0 0 280px;       /* largeur fixe desktop */
             padding: 16px;
             background: #16213e;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
-        h2 { color: #e94560; font-size: 18px; }
+        /* ─────────────────────────────────────────
+           LAYOUT TABLETTE (768px – 1023px)
+           Canvas en haut, dashboard en bas scrollable
+        ───────────────────────────────────────── */
+        @media (max-width: 1023px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+            }
+
+            #canvas-zone {
+                border-right: none;
+                border-bottom: 2px solid #333;
+                padding: 16px;
+                flex: none;
+                width: 100%;
+                /* Hauteur proportionnelle à la largeur de l'écran */
+                height: 60vw;
+                max-height: 520px;
+                min-height: 300px;
+            }
+
+            #dashboard {
+                flex: none;
+                width: 100%;
+                /* Sur tablette le dashboard s'étale en grille 2 colonnes */
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                padding: 16px;
+            }
+
+            /* Le titre prend toute la largeur en premier */
+            #dashboard > div:first-child {
+                grid-column: 1 / -1;
+            }
+        }
+
+        /* ─────────────────────────────────────────
+           LAYOUT MOBILE (< 768px)
+           Tout en colonne, une section par ligne
+        ───────────────────────────────────────── */
+        @media (max-width: 767px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                overflow-y: auto;
+            }
+
+            #canvas-zone {
+                border-right: none;
+                border-bottom: 2px solid #333;
+                padding: 10px;
+                height: 75vw;      /* presque carré sur mobile */
+                max-height: 400px;
+                min-height: 220px;
+            }
+
+            #dashboard {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 12px;
+                width: 100%;
+            }
+        }
+
+        /* ─────────────────────────────────────────
+           LAYOUT GRAND ÉCRAN (≥ 1440px)
+           Dashboard un peu plus large
+        ───────────────────────────────────────── */
+        @media (min-width: 1440px) {
+            #dashboard {
+                flex: 0 0 320px;
+            }
+        }
+
+        /* ─────────────────────────────────────────
+           COMPOSANTS (communs à toutes les tailles)
+        ───────────────────────────────────────── */
+
+        h2 {
+            color: #e94560;
+            font-size: clamp(15px, 2vw, 20px);  /* adaptatif */
+        }
 
         /* ── Sections ── */
         .section {
@@ -37,6 +153,7 @@
             border-radius: 8px;
             padding: 12px;
         }
+
         .section-title {
             font-size: 11px;
             font-weight: 600;
@@ -46,7 +163,7 @@
             text-transform: uppercase;
         }
 
-        /* ── Boutons de contrôle ── */
+        /* ── Boutons différenciés ── */
         button {
             display: block;
             width: 100%;
@@ -55,51 +172,56 @@
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: clamp(12px, 1.5vw, 14px);
             color: white;
+            transition: background 0.15s;
         }
-        
+        button:last-of-type { margin-bottom: 0; }
+
         #btn-start  { background: #22c55e; }
         #btn-start:hover  { background: #16a34a; }
-        
         #btn-pause  { background: #fb923c; }
         #btn-pause:hover  { background: #ea7a1e; }
-        
         #btn-reset  { background: #64748b; }
         #btn-reset:hover  { background: #475569; }
-        button:last-child { margin-bottom: 0; }
 
-        /* ── Curseur de vitesse ── */
+        /* ── Slider de vitesse ── */
         .slider-row {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-top: 6px;
+            margin-top: 8px;
         }
-        .slider-row label { font-size: 12px; color: #ccc; white-space: nowrap; }
-        .slider-row input[type=range] { flex: 1; accent-color: #e94560; }
-        .slider-row span { font-size: 12px; color: #e94560; min-width: 28px; text-align: right; }
+        .slider-row label {
+            font-size: 12px;
+            color: #ccc;
+            white-space: nowrap;
+        }
+        .slider-row input[type=range] {
+            flex: 1;
+            accent-color: #e94560;
+            min-width: 0;   /* évite le débordement flexbox */
+        }
+        .slider-row span {
+            font-size: 12px;
+            color: #e94560;
+            min-width: 28px;
+            text-align: right;
+        }
 
-        /* ── Stat items ── */
-        .stat-item { margin-bottom: 10px; }
-        .stat-item:last-child { margin-bottom: 0; }
-        .stat-label { font-size: 13px; margin-bottom: 4px; }
-        .stat-bar-bg { background: #1a1a2e; height: 5px; border-radius: 3px; overflow: hidden; }
-        .stat-bar { height: 5px; border-radius: 3px; width: 0%; transition: width 0.5s; }
-
-
-        /* ── État général ── */
+        /* ── Ligne d'état ── */
         .status-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 13px;
+            margin-bottom: 10px;
         }
-        #status { color: #4ade80; font-weight: 600; }
+        #status { font-weight: 600; color: #4ade80; }
 
         /* ── Horloge ── */
         #clock {
-            font-size: 20px;
+            font-size: clamp(18px, 3vw, 24px);
             font-weight: 700;
             color: #e2e8f0;
             letter-spacing: 0.05em;
@@ -111,25 +233,51 @@
             color: #666;
             text-align: center;
         }
+
+        /* ── Stats trafic ── */
+        .stat-item { margin-bottom: 10px; }
+        .stat-item:last-child { margin-bottom: 0; }
+        .stat-label {
+            font-size: clamp(11px, 1.4vw, 13px);
+            margin-bottom: 4px;
+        }
+        .stat-bar-bg {
+            background: #1a1a2e;
+            height: 5px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .stat-bar {
+            height: 5px;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.5s;
+        }
+
+        /* ── Scrollbar discrète (dashboard) ── */
+        #dashboard::-webkit-scrollbar { width: 4px; }
+        #dashboard::-webkit-scrollbar-track { background: transparent; }
+        #dashboard::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
     </style>
 </head>
 <body>
+
     <div id="canvas-zone">
         <canvas id="traffic-canvas"></canvas>
     </div>
 
     <div id="dashboard">
 
-        <!-- ── En-tête ── -->
+        <!-- En-tête -->
         <div>
             <h2>🚦 Simurba</h2>
         </div>
 
-        <!-- ── Section 1 : Contrôles ── -->
+        <!-- Section 1 : Contrôles -->
         <div class="section">
             <p class="section-title">Contrôles</p>
 
-            <div class="status-row" style="margin-bottom:10px;">
+            <div class="status-row">
                 <span style="font-size:12px; color:#aaa;">État :</span>
                 <span id="status" style="color:#4ade80;">en cours...</span>
             </div>
@@ -138,26 +286,25 @@
             <button id="btn-pause">⏸ Pauser</button>
             <button id="btn-reset">↺ Réinitialiser</button>
 
-            <!-- Curseur de vitesse — lie speedFactor dans simulation.js -->
             <div class="slider-row">
-                <label>Vitesse</label>
+                <label>🐢</label>
                 <input type="range" id="speed-slider" min="1" max="5" step="0.5" value="1">
+                <label>⚡</label>
                 <span id="speed-label">×1</span>
             </div>
         </div>
 
-        <!-- ── Section 2 : Horloge de simulation ── -->
+        <!-- Section 2 : Horloge -->
         <div class="section">
             <p class="section-title">Temps de simulation</p>
             <div id="clock">00:00</div>
             <p class="clock-sub">mm:ss écoulées</p>
         </div>
 
-        <!-- ── Section 3 : Trafic en direct ── -->
+        <!-- Section 3 : Trafic en direct -->
         <div class="section">
             <p class="section-title">Trafic en direct</p>
 
-            <!-- Nombre total de véhicules -->
             <div class="stat-item">
                 <div class="stat-label" style="color:#94a3b8;">
                     🚗 Véhicules actifs : <strong id="count-total">0</strong>
