@@ -16,6 +16,8 @@
             border-right: 2px solid #333;
         }
 
+        #status { font-weight: 600; }
+
         /* ── Barre latérale ── */
         #dashboard {
             flex: 1;
@@ -50,14 +52,21 @@
             width: 100%;
             margin-bottom: 8px;
             padding: 9px;
-            background: #e94560;
-            color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
+            color: white;
         }
-        button:hover { background: #c73652; }
+        
+        #btn-start  { background: #22c55e; }
+        #btn-start:hover  { background: #16a34a; }
+        
+        #btn-pause  { background: #fb923c; }
+        #btn-pause:hover  { background: #ea7a1e; }
+        
+        #btn-reset  { background: #64748b; }
+        #btn-reset:hover  { background: #475569; }
         button:last-child { margin-bottom: 0; }
 
         /* ── Curseur de vitesse ── */
@@ -122,7 +131,7 @@
 
             <div class="status-row" style="margin-bottom:10px;">
                 <span style="font-size:12px; color:#aaa;">État :</span>
-                <span id="status">en cours...</span>
+                <span id="status" style="color:#4ade80;">en cours...</span>
             </div>
 
             <button id="btn-start">▶ Démarrer</button>

@@ -265,6 +265,7 @@ document.getElementById('btn-start').addEventListener('click', () => {
     if (!running) {
         running = true;
         document.getElementById('status').textContent = 'en cours...';
+        document.getElementById('status').style.color = '#4ade80'; // vert
         loop();
     }
 });
@@ -273,6 +274,7 @@ document.getElementById('btn-pause').addEventListener('click', () => {
     running = false;
     cancelAnimationFrame(animationId);
     document.getElementById('status').textContent = 'en pause';
+    document.getElementById('status').style.color = '#fb923c'; // orange
 });
 
 document.getElementById('btn-reset').addEventListener('click', () => {
@@ -282,6 +284,7 @@ document.getElementById('btn-reset').addEventListener('click', () => {
     frameAcc   = 0;
     document.getElementById('clock').textContent = '00:00';
     document.getElementById('status').textContent = 'en cours...';
+    document.getElementById('status').style.color = '#4ade80'; // vert
     if (!running) { running = true; loop(); }
 });
 
