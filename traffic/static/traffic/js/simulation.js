@@ -103,6 +103,35 @@ function updateClock() {
 }
 
 // ─────────────────────────────────────────────────────────────
+//  Références boutons
+// ─────────────────────────────────────────────────────────────
+const btnStart = document.getElementById('btn-start');
+const btnPause = document.getElementById('btn-pause');
+const btnReset = document.getElementById('btn-reset');
+
+// ─────────────────────────────────────────────────────────────
+//  Helper : état des boutons selon running/paused
+//  'running' → Démarrer grisé, Pauser actif
+//  'paused'  → Démarrer actif, Pauser grisé
+// ─────────────────────────────────────────────────────────────
+function setButtons(state) {
+    btnStart.disabled = (state === 'running');
+    btnPause.disabled = (state === 'paused');
+    // Réinitialiser toujours disponible — jamais disabled
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Helper : mise à jour du statut + dot
+// ─────────────────────────────────────────────────────────────
+function setStatus(text, color, paused = false) {
+    const statusEl = document.getElementById('status');
+    const dotEl    = document.getElementById('status-dot');
+    statusEl.textContent = text;
+    statusEl.style.color = color;
+    dotEl.className = paused ? 'status-dot paused' : 'status-dot';
+}
+
+// ─────────────────────────────────────────────────────────────
 //  Dessin
 // ─────────────────────────────────────────────────────────────
 function drawBackground() {
@@ -153,6 +182,21 @@ function drawTrafficLights() {
         if (img.complete) {
             ctx.drawImage(img, tl.node.x + 18, tl.node.y - 46, 28, 52);
         }
+
+        const cx = tl.node.x + 52;
+        const cy = tl.node.y - 32;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, 11, 0, Math.PI * 2);
+        ctx.fillStyle = tl.state === 'green'
+            ? 'rgba(74, 222, 128, 0.25)'
+            : 'rgba(239, 68, 68, 0.25)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+        ctx.fillStyle = tl.state === 'green' ? '#4ade80' : '#ef4444';
+        ctx.fill();
     });
 }
 
@@ -252,29 +296,29 @@ function loop() {
 // ─────────────────────────────────────────────────────────────
 //  Événements des boutons
 // ─────────────────────────────────────────────────────────────
-document.getElementById('btn-start').addEventListener('click', () => {
+btnStart.addEventListener('click', () => {
     if (!running) {
         running = true;
-        document.getElementById('status').textContent = 'en cours...';
-        document.getElementById('status').style.color = '#4ade80';
+        setStatus('en cours...', '#4ade80', false);
+        setButtons('running');
         loop();
     }
 });
 
-document.getElementById('btn-pause').addEventListener('click', () => {
+btnPause.addEventListener('click', () => {
     running = false;
     cancelAnimationFrame(animationId);
-    document.getElementById('status').textContent = 'en pause';
-    document.getElementById('status').style.color = '#fb923c';
+    setStatus('en pause', '#fb923c', true);
+    setButtons('paused');
 });
 
-document.getElementById('btn-reset').addEventListener('click', () => {
+btnReset.addEventListener('click', () => {
     vehicles.forEach(v => { v.progress = 0; });
     simSeconds = 0;
     frameAcc   = 0;
     document.getElementById('clock').textContent = '00:00';
-    document.getElementById('status').textContent = 'en cours...';
-    document.getElementById('status').style.color = '#4ade80';
+    setStatus('en cours...', '#4ade80', false);
+    setButtons('running');
     if (!running) { running = true; loop(); }
 });
 
@@ -283,20 +327,21 @@ document.getElementById('btn-reset').addEventListener('click', () => {
 // ─────────────────────────────────────────────────────────────
 let imagesLoaded = 0;
 const totalImages = 4;
-const loadStart = Date.now();// heure de début du chargement
+const loadStart = Date.now();
 
 [bgImg, carsImg, tlRedImg, tlGreenImg].forEach(img => {
     img.onload = () => {
         imagesLoaded++;
         if (imagesLoaded === totalImages) {
             const elapsed   = Date.now() - loadStart;
-            const minDelay  = 3000;// 3 secondes minimum
+            const minDelay  = 3000;
             const remaining = Math.max(0, minDelay - elapsed);
 
             setTimeout(() => {
                 const overlay = document.getElementById('loading-overlay');
                 overlay.classList.add('hidden');
                 setTimeout(() => overlay.remove(), 400);
+                setButtons('running'); // Démarrer grisé dès le lancement
                 loop();
             }, remaining);
         }

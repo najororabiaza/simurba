@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simurba</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚦</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         /* ── Reset ── */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,14 +15,13 @@
         /* ── Base ── */
         html, body {
             height: 100%;
-            font-family: sans-serif;
+            font-family: 'Inter', sans-serif;
             background: #1a1a2e;
             color: white;
         }
 
         /* ─────────────────────────────────────────
            LAYOUT DESKTOP (≥ 1024px)
-           Canvas à gauche, dashboard à droite
         ───────────────────────────────────────── */
         body {
             display: flex;
@@ -31,19 +32,21 @@
 
         #canvas-zone {
             flex: 3;
-            position: relative;         /* nécessaire pour l'overlay absolu */
+            position: relative;
             display: flex;
-            align-items: center;
+            align-items: stretch;        /* ← étire le canvas à toute la hauteur */
             justify-content: center;
             border-right: 2px solid #333;
             overflow: hidden;
-            padding: 12px;
+            padding: 16px;                  /* ← plus de padding autour */
         }
 
+        /* Le canvas couvre tout l'espace disponible */
         #traffic-canvas {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;           /* ← remplit sans déformer */
+            cursor: crosshair;           /* ← curseur croix sur la carte */
         }
 
         /* ── Overlay de chargement ── */
@@ -92,7 +95,6 @@
             #canvas-zone {
                 border-right: none;
                 border-bottom: 2px solid #333;
-                padding: 16px;
                 flex: none;
                 width: 100%;
                 height: 60vw;
@@ -127,7 +129,6 @@
             #canvas-zone {
                 border-right: none;
                 border-bottom: 2px solid #333;
-                padding: 10px;
                 height: 75vw;
                 max-height: 400px;
                 min-height: 220px;
@@ -183,8 +184,9 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: clamp(12px, 1.5vw, 14px);
+            font-family: 'Inter', sans-serif;
             color: white;
-            transition: background 0.15s;
+            transition: background 0.15s, opacity 0.15s;
         }
         button:last-of-type { margin-bottom: 0; }
 
@@ -195,6 +197,16 @@
         #btn-reset       { background: #64748b; }
         #btn-reset:hover { background: #475569; }
 
+        /* ── Bouton désactivé ── */
+        button:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        /* On neutralise le hover quand désactivé */
+        #btn-start:disabled:hover { background: #22c55e; }
+        #btn-pause:disabled:hover { background: #fb923c; }
+        #btn-reset:disabled:hover { background: #64748b; }
+
         /* ── Slider de vitesse ── */
         .slider-row {
             display: flex;
@@ -203,8 +215,34 @@
             margin-top: 8px;
         }
         .slider-row label { font-size: 12px; color: #ccc; white-space: nowrap; }
-        .slider-row input[type=range] { flex: 1; accent-color: #e94560; min-width: 0; }
-        .slider-row span { font-size: 12px; color: #e94560; min-width: 28px; text-align: right; }
+        .slider-row span  { font-size: 12px; color: #e94560; min-width: 28px; text-align: right; }
+
+        .slider-row input[type=range] {
+            flex: 1;
+            min-width: 0;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            border-radius: 2px;
+            background: #334155;
+            outline: none;
+        }
+        .slider-row input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #e94560;
+            cursor: pointer;
+        }
+        .slider-row input[type=range]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #e94560;
+            border: none;
+            cursor: pointer;
+        }
 
         /* ── Ligne d'état ── */
         .status-row {
@@ -215,6 +253,28 @@
             margin-bottom: 10px;
         }
         #status { font-weight: 600; }
+
+        /* ── Dot animé de statut ── */
+        @keyframes pulse {
+            0%, 100% { opacity: 1;   transform: scale(1);   }
+            50%       { opacity: 0.4; transform: scale(0.7); }
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            background: #4ade80;
+            animation: pulse 1.4s ease-in-out infinite;
+            vertical-align: middle;
+        }
+
+        .status-dot.paused {
+            background: #fb923c;
+            animation: none;
+        }
 
         /* ── Horloge ── */
         #clock {
@@ -239,39 +299,32 @@
         #dashboard::-webkit-scrollbar-track { background: transparent; }
         #dashboard::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
-        /* ── Animations d'apparition au chargement ── */
+        /* ── Animations d'apparition ── */
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(24px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes fadeLeft {
             from { opacity: 0; transform: translateX(24px); }
             to   { opacity: 1; transform: translateX(0); }
         }
 
-        /* Canvas zone : glisse depuis la gauche */
         #canvas-zone {
             animation: fadeUp 0.6s ease both;
             animation-delay: 0.1s;
         }
-
-        /* Dashboard : glisse depuis la droite, légèrement après */
-        #dashboard > div:nth-child(1) { animation: fadeLeft 0.8s ease both; animation-delay: 0.4s; }
+        #dashboard > div:nth-child(1) { animation: fadeLeft 0.8s ease both; animation-delay: 0.40s; }
         #dashboard > div:nth-child(2) { animation: fadeLeft 0.8s ease both; animation-delay: 0.45s; }
-        #dashboard > div:nth-child(3) { animation: fadeLeft 0.8s ease both; animation-delay: 0.6s; }
+        #dashboard > div:nth-child(3) { animation: fadeLeft 0.8s ease both; animation-delay: 0.60s; }
         #dashboard > div:nth-child(4) { animation: fadeLeft 0.8s ease both; animation-delay: 0.85s; }
     </style>
 </head>
 <body>
 
     <div id="canvas-zone">
-
-        <!-- Overlay de chargement : visible jusqu'à ce que les 4 images soient prêtes -->
         <div id="loading-overlay">
             <img src="{% static 'traffic/img/loading.gif' %}" alt="Chargement...">
         </div>
-
         <canvas id="traffic-canvas"></canvas>
     </div>
 
@@ -288,7 +341,10 @@
 
             <div class="status-row">
                 <span style="font-size:12px; color:#aaa;">État :</span>
-                <span id="status" style="color:#4ade80;">en cours...</span>
+                <span style="display:flex; align-items:center;">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status" style="color:#4ade80;">en cours...</span>
+                </span>
             </div>
 
             <button id="btn-start">▶ Démarrer</button>
