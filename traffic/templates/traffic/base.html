@@ -12,7 +12,6 @@
         /* ── Reset ── */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* ── Base ── */
         html, body {
             height: 100%;
             font-family: 'Inter', sans-serif;
@@ -20,9 +19,6 @@
             color: white;
         }
 
-        /* ─────────────────────────────────────────
-           LAYOUT DESKTOP (≥ 1024px)
-        ───────────────────────────────────────── */
         body {
             display: flex;
             flex-direction: row;
@@ -30,23 +26,62 @@
             overflow: hidden;
         }
 
+        /* ─────────────────────────────────────────
+           Canvas zone
+        ───────────────────────────────────────── */
         #canvas-zone {
             flex: 3;
             position: relative;
             display: flex;
-            align-items: stretch;        /* ← étire le canvas à toute la hauteur */
+            align-items: stretch;
             justify-content: center;
             border-right: 2px solid #333;
             overflow: hidden;
-            padding: 16px;                  /* ← plus de padding autour */
+            padding: 8px;
         }
 
-        /* Le canvas couvre tout l'espace disponible */
         #traffic-canvas {
             width: 100%;
             height: 100%;
-            object-fit: cover;           /* ← remplit sans déformer */
-            cursor: crosshair;           /* ← curseur croix sur la carte */
+            object-fit: cover;
+            cursor: crosshair;
+        }
+
+        /* ── Tooltip route ── */
+        #route-tooltip {
+            position: absolute;
+            pointer-events: none;         /* ne bloque pas la souris */
+            display: none;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            z-index: 20;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+
+        #route-tooltip .tt-title {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 3px;
+        }
+
+        #route-tooltip .tt-state {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        #route-tooltip .tt-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
         }
 
         /* ── Overlay de chargement ── */
@@ -61,16 +96,16 @@
             transition: opacity 0.4s ease;
         }
 
-        #loading-overlay img {
-            width: clamp(300px, 50vw, 500px);
-        }
+        #loading-overlay img { width: clamp(300px, 50vw, 500px); }
 
         #loading-overlay.hidden {
             opacity: 0;
             pointer-events: none;
         }
 
-        /* ── Dashboard ── */
+        /* ─────────────────────────────────────────
+           Dashboard
+        ───────────────────────────────────────── */
         #dashboard {
             flex: 0 0 280px;
             padding: 16px;
@@ -81,209 +116,116 @@
             gap: 14px;
         }
 
-        /* ─────────────────────────────────────────
-           LAYOUT TABLETTE (768px – 1023px)
-        ───────────────────────────────────────── */
+        /* ── Tablette ── */
         @media (max-width: 1023px) {
-            body {
-                flex-direction: column;
-                height: auto;
-                min-height: 100vh;
-                overflow-y: auto;
-            }
-
+            body { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; }
             #canvas-zone {
-                border-right: none;
-                border-bottom: 2px solid #333;
-                flex: none;
-                width: 100%;
-                height: 60vw;
-                max-height: 520px;
-                min-height: 300px;
+                border-right: none; border-bottom: 2px solid #333;
+                flex: none; width: 100%; height: 60vw;
+                max-height: 520px; min-height: 300px;
             }
-
             #dashboard {
-                flex: none;
-                width: 100%;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-                padding: 16px;
+                flex: none; width: 100%;
+                display: grid; grid-template-columns: 1fr 1fr;
+                gap: 12px; padding: 16px;
             }
-
-            #dashboard > div:first-child {
-                grid-column: 1 / -1;
-            }
+            #dashboard > div:first-child { grid-column: 1 / -1; }
         }
 
-        /* ─────────────────────────────────────────
-           LAYOUT MOBILE (< 768px)
-        ───────────────────────────────────────── */
+        /* ── Mobile ── */
         @media (max-width: 767px) {
-            body {
-                flex-direction: column;
-                height: auto;
-                overflow-y: auto;
-            }
-
+            body { flex-direction: column; height: auto; overflow-y: auto; }
             #canvas-zone {
-                border-right: none;
-                border-bottom: 2px solid #333;
-                height: 75vw;
-                max-height: 400px;
-                min-height: 220px;
+                border-right: none; border-bottom: 2px solid #333;
+                height: 75vw; max-height: 400px; min-height: 220px;
             }
-
-            #dashboard {
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-                padding: 12px;
-                width: 100%;
-            }
+            #dashboard { display: flex; flex-direction: column; gap: 12px; padding: 12px; width: 100%; }
         }
+
+        /* ── Grand écran ── */
+        @media (min-width: 1440px) { #dashboard { flex: 0 0 320px; } }
 
         /* ─────────────────────────────────────────
-           LAYOUT GRAND ÉCRAN (≥ 1440px)
+           Composants
         ───────────────────────────────────────── */
-        @media (min-width: 1440px) {
-            #dashboard { flex: 0 0 320px; }
-        }
+        h2 { color: #e94560; font-size: clamp(15px, 2vw, 20px); }
 
-        /* ─────────────────────────────────────────
-           COMPOSANTS
-        ───────────────────────────────────────── */
-
-        h2 {
-            color: #e94560;
-            font-size: clamp(15px, 2vw, 20px);
-        }
-
-        .section {
-            background: #0f3460;
-            border-radius: 8px;
-            padding: 12px;
-        }
+        .section { background: #0f3460; border-radius: 8px; padding: 12px; }
 
         .section-title {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            color: #aaa;
-            margin-bottom: 10px;
-            text-transform: uppercase;
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 0.08em; color: #aaa;
+            margin-bottom: 10px; text-transform: uppercase;
         }
 
-        /* ── Boutons différenciés ── */
+        /* ── Boutons ── */
         button {
-            display: block;
-            width: 100%;
-            margin-bottom: 8px;
-            padding: 9px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: clamp(12px, 1.5vw, 14px);
-            font-family: 'Inter', sans-serif;
-            color: white;
+            display: block; width: 100%; margin-bottom: 8px;
+            padding: 9px; border: none; border-radius: 6px;
+            cursor: pointer; font-size: clamp(12px, 1.5vw, 14px);
+            font-family: 'Inter', sans-serif; color: white;
             transition: background 0.15s, opacity 0.15s;
         }
         button:last-of-type { margin-bottom: 0; }
-
         #btn-start       { background: #22c55e; }
         #btn-start:hover { background: #16a34a; }
         #btn-pause       { background: #fb923c; }
         #btn-pause:hover { background: #ea7a1e; }
         #btn-reset       { background: #64748b; }
         #btn-reset:hover { background: #475569; }
-
-        /* ── Bouton désactivé ── */
-        button:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-        }
-        /* On neutralise le hover quand désactivé */
+        button:disabled { opacity: 0.35; cursor: not-allowed; }
         #btn-start:disabled:hover { background: #22c55e; }
         #btn-pause:disabled:hover { background: #fb923c; }
         #btn-reset:disabled:hover { background: #64748b; }
 
-        /* ── Slider de vitesse ── */
+        /* ── Slider ── */
         .slider-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
+            display: flex; align-items: center;
+            gap: 8px; margin-top: 8px;
         }
         .slider-row label { font-size: 12px; color: #ccc; white-space: nowrap; }
         .slider-row span  { font-size: 12px; color: #e94560; min-width: 28px; text-align: right; }
-
         .slider-row input[type=range] {
-            flex: 1;
-            min-width: 0;
-            -webkit-appearance: none;
-            appearance: none;
-            height: 4px;
-            border-radius: 2px;
-            background: #334155;
-            outline: none;
+            flex: 1; min-width: 0;
+            -webkit-appearance: none; appearance: none;
+            height: 4px; border-radius: 2px;
+            background: #334155; outline: none;
         }
         .slider-row input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #e94560;
-            cursor: pointer;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #e94560; cursor: pointer;
         }
         .slider-row input[type=range]::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #e94560;
-            border: none;
-            cursor: pointer;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #e94560; border: none; cursor: pointer;
         }
 
-        /* ── Ligne d'état ── */
+        /* ── Statut ── */
         .status-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-            margin-bottom: 10px;
+            display: flex; justify-content: space-between;
+            align-items: center; font-size: 13px; margin-bottom: 10px;
         }
         #status { font-weight: 600; }
 
-        /* ── Dot animé de statut ── */
         @keyframes pulse {
             0%, 100% { opacity: 1;   transform: scale(1);   }
             50%       { opacity: 0.4; transform: scale(0.7); }
         }
-
         .status-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 6px;
+            display: inline-block; width: 8px; height: 8px;
+            border-radius: 50%; margin-right: 6px;
             background: #4ade80;
             animation: pulse 1.4s ease-in-out infinite;
             vertical-align: middle;
         }
-
-        .status-dot.paused {
-            background: #fb923c;
-            animation: none;
-        }
+        .status-dot.paused { background: #fb923c; animation: none; }
 
         /* ── Horloge ── */
         #clock {
-            font-size: clamp(18px, 3vw, 24px);
-            font-weight: 700;
-            color: #e2e8f0;
-            letter-spacing: 0.05em;
-            text-align: center;
-            margin: 2px 0;
+            font-size: clamp(18px, 3vw, 24px); font-weight: 700;
+            color: #e2e8f0; letter-spacing: 0.05em;
+            text-align: center; margin: 2px 0;
         }
         .clock-sub { font-size: 11px; color: #666; text-align: center; }
 
@@ -294,12 +236,50 @@
         .stat-bar-bg { background: #1a1a2e; height: 5px; border-radius: 3px; overflow: hidden; }
         .stat-bar { height: 5px; border-radius: 3px; width: 0%; transition: width 0.5s; }
 
-        /* ── Scrollbar discrète ── */
+        /* ── Donut ── */
+        .donut-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 4px;
+        }
+
+        #donut-canvas {
+            flex-shrink: 0;
+        }
+
+        .donut-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .donut-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .donut-legend-dot {
+            width: 9px; height: 9px;
+            border-radius: 50%; flex-shrink: 0;
+        }
+
+        .donut-legend-pct {
+            margin-left: auto;
+            font-weight: 600;
+            font-size: 12px;
+            min-width: 32px;
+            text-align: right;
+        }
+
+        /* ── Scrollbar ── */
         #dashboard::-webkit-scrollbar { width: 4px; }
         #dashboard::-webkit-scrollbar-track { background: transparent; }
         #dashboard::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
-        /* ── Animations d'apparition ── */
+        /* ── Animations ── */
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(24px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -309,14 +289,12 @@
             to   { opacity: 1; transform: translateX(0); }
         }
 
-        #canvas-zone {
-            animation: fadeUp 0.6s ease both;
-            animation-delay: 0.1s;
-        }
+        #canvas-zone { animation: fadeUp 0.6s ease both; animation-delay: 0.1s; }
         #dashboard > div:nth-child(1) { animation: fadeLeft 0.8s ease both; animation-delay: 0.40s; }
         #dashboard > div:nth-child(2) { animation: fadeLeft 0.8s ease both; animation-delay: 0.45s; }
         #dashboard > div:nth-child(3) { animation: fadeLeft 0.8s ease both; animation-delay: 0.60s; }
-        #dashboard > div:nth-child(4) { animation: fadeLeft 0.8s ease both; animation-delay: 0.85s; }
+        #dashboard > div:nth-child(4) { animation: fadeLeft 0.8s ease both; animation-delay: 0.75s; }
+        #dashboard > div:nth-child(5) { animation: fadeLeft 0.8s ease both; animation-delay: 0.90s; }
     </style>
 </head>
 <body>
@@ -326,6 +304,15 @@
             <img src="{% static 'traffic/img/loading.gif' %}" alt="Chargement...">
         </div>
         <canvas id="traffic-canvas"></canvas>
+
+        <!-- Tooltip route — positionné par JS -->
+        <div id="route-tooltip">
+            <div class="tt-title" id="tt-title">Route</div>
+            <div class="tt-state">
+                <span class="tt-dot" id="tt-dot"></span>
+                <span id="tt-state-text"></span>
+            </div>
+        </div>
     </div>
 
     <div id="dashboard">
@@ -366,7 +353,32 @@
             <p class="clock-sub">mm:ss écoulées</p>
         </div>
 
-        <!-- Section 3 : Trafic en direct -->
+        <!-- Section 3 : Densité globale (donut) -->
+        <div class="section">
+            <p class="section-title">Densité globale</p>
+            <div class="donut-wrapper">
+                <canvas id="donut-canvas" width="90" height="90"></canvas>
+                <div class="donut-legend">
+                    <div class="donut-legend-item">
+                        <span class="donut-legend-dot" style="background:#4ade80;"></span>
+                        <span>Fluide</span>
+                        <span class="donut-legend-pct" id="pct-fluide">—</span>
+                    </div>
+                    <div class="donut-legend-item">
+                        <span class="donut-legend-dot" style="background:#fb923c;"></span>
+                        <span>Ralenti</span>
+                        <span class="donut-legend-pct" id="pct-ralenti">—</span>
+                    </div>
+                    <div class="donut-legend-item">
+                        <span class="donut-legend-dot" style="background:#ef4444;"></span>
+                        <span>Bouchon</span>
+                        <span class="donut-legend-pct" id="pct-bouchon">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4 : Trafic en direct -->
         <div class="section">
             <p class="section-title">Trafic en direct</p>
 

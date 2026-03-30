@@ -33,7 +33,7 @@ const carSprites = [
 ];
 
 // ─────────────────────────────────────────────────────────────
-//  Réseau routier — grille 3×3 alignée sur le fond city
+//  Réseau routier — grille 3×3
 // ─────────────────────────────────────────────────────────────
 const nodes = [
     { x: 110, y: 114 }, { x: 374, y: 114 }, { x: 659, y: 114 },
@@ -42,20 +42,22 @@ const nodes = [
 ];
 
 const stateColors = { fluide: '#4ade80', ralenti: '#fb923c', bouchon: '#ef4444' };
+const stateLabels = { fluide: 'Fluide', ralenti: 'Ralenti', bouchon: 'Bouchon' };
 
+// Noms lisibles pour le tooltip (ex: "A1 → A2")
 const roads = [
-    { from: nodes[0], to: nodes[1], state: 'fluide'  },
-    { from: nodes[1], to: nodes[2], state: 'ralenti' },
-    { from: nodes[3], to: nodes[4], state: 'fluide'  },
-    { from: nodes[4], to: nodes[5], state: 'bouchon' },
-    { from: nodes[6], to: nodes[7], state: 'ralenti' },
-    { from: nodes[7], to: nodes[8], state: 'fluide'  },
-    { from: nodes[0], to: nodes[3], state: 'fluide'  },
-    { from: nodes[1], to: nodes[4], state: 'bouchon' },
-    { from: nodes[2], to: nodes[5], state: 'fluide'  },
-    { from: nodes[3], to: nodes[6], state: 'ralenti' },
-    { from: nodes[4], to: nodes[7], state: 'fluide'  },
-    { from: nodes[5], to: nodes[8], state: 'ralenti' },
+    { from: nodes[0], to: nodes[1], state: 'fluide',  name: 'Route 1 — N→E (haut)'     },
+    { from: nodes[1], to: nodes[2], state: 'ralenti', name: 'Route 2 — N→E (haut)'     },
+    { from: nodes[3], to: nodes[4], state: 'fluide',  name: 'Route 3 — N→E (milieu)'   },
+    { from: nodes[4], to: nodes[5], state: 'bouchon', name: 'Route 4 — N→E (milieu)'   },
+    { from: nodes[6], to: nodes[7], state: 'ralenti', name: 'Route 5 — N→E (bas)'      },
+    { from: nodes[7], to: nodes[8], state: 'fluide',  name: 'Route 6 — N→E (bas)'      },
+    { from: nodes[0], to: nodes[3], state: 'fluide',  name: 'Route 7 — N→S (gauche)'   },
+    { from: nodes[1], to: nodes[4], state: 'bouchon', name: 'Route 8 — N→S (centre)'   },
+    { from: nodes[2], to: nodes[5], state: 'fluide',  name: 'Route 9 — N→S (droite)'   },
+    { from: nodes[3], to: nodes[6], state: 'ralenti', name: 'Route 10 — N→S (gauche)'  },
+    { from: nodes[4], to: nodes[7], state: 'fluide',  name: 'Route 11 — N→S (centre)'  },
+    { from: nodes[5], to: nodes[8], state: 'ralenti', name: 'Route 12 — N→S (droite)'  },
 ];
 
 const vehicles = roads.map(road => ({
@@ -75,17 +77,15 @@ const trafficLights = nodes.map(node => ({
 //  Contrôle de vitesse
 // ─────────────────────────────────────────────────────────────
 let speedFactor = 1;
-
 const speedSlider = document.getElementById('speed-slider');
 const speedLabel  = document.getElementById('speed-label');
-
 speedSlider.addEventListener('input', () => {
     speedFactor = parseFloat(speedSlider.value);
     speedLabel.textContent = '×' + speedFactor;
 });
 
 // ─────────────────────────────────────────────────────────────
-//  Horloge de simulation
+//  Horloge
 // ─────────────────────────────────────────────────────────────
 let simSeconds = 0;
 let frameAcc   = 0;
@@ -93,36 +93,24 @@ const FPS_REF  = 60;
 
 function updateClock() {
     frameAcc += speedFactor;
-    if (frameAcc >= FPS_REF) {
-        simSeconds++;
-        frameAcc -= FPS_REF;
-    }
+    if (frameAcc >= FPS_REF) { simSeconds++; frameAcc -= FPS_REF; }
     const mm = String(Math.floor(simSeconds / 60)).padStart(2, '0');
     const ss = String(simSeconds % 60).padStart(2, '0');
     document.getElementById('clock').textContent = mm + ':' + ss;
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Références boutons
+//  Boutons
 // ─────────────────────────────────────────────────────────────
 const btnStart = document.getElementById('btn-start');
 const btnPause = document.getElementById('btn-pause');
 const btnReset = document.getElementById('btn-reset');
 
-// ─────────────────────────────────────────────────────────────
-//  Helper : état des boutons selon running/paused
-//  'running' → Démarrer grisé, Pauser actif
-//  'paused'  → Démarrer actif, Pauser grisé
-// ─────────────────────────────────────────────────────────────
 function setButtons(state) {
     btnStart.disabled = (state === 'running');
     btnPause.disabled = (state === 'paused');
-    // Réinitialiser toujours disponible — jamais disabled
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Helper : mise à jour du statut + dot
-// ─────────────────────────────────────────────────────────────
 function setStatus(text, color, paused = false) {
     const statusEl = document.getElementById('status');
     const dotEl    = document.getElementById('status-dot');
@@ -132,7 +120,159 @@ function setStatus(text, color, paused = false) {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Dessin
+//  TOOLTIP — distance point → segment
+// ─────────────────────────────────────────────────────────────
+const tooltip    = document.getElementById('route-tooltip');
+const ttTitle    = document.getElementById('tt-title');
+const ttDot      = document.getElementById('tt-dot');
+const ttStateText = document.getElementById('tt-state-text');
+
+// Calcule la distance minimale entre un point P et le segment AB
+function distPointToSegment(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(px - ax, py - ay);
+    let t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+// Convertit les coordonnées écran → coordonnées canvas internes
+function screenToCanvas(screenX, screenY) {
+    const rect = canvas.getBoundingClientRect();
+    const canvasAspect  = canvas.width  / canvas.height;
+    const displayAspect = rect.width    / rect.height;
+
+    let scale, offsetX = 0, offsetY = 0;
+
+    if (displayAspect > canvasAspect) {
+        // Container plus large → scale par la largeur, haut/bas rognés
+        scale   = rect.width / canvas.width;
+        offsetY = (canvas.height - rect.height / scale) / 2;
+    } else {
+        // Container plus haut → scale par la hauteur, gauche/droite rognés
+        scale   = rect.height / canvas.height;
+        offsetX = (canvas.width - rect.width / scale) / 2;
+    }
+
+    return {
+        x: (screenX - rect.left) / scale + offsetX,
+        y: (screenY - rect.top)  / scale + offsetY,
+    };
+}
+
+canvas.addEventListener('mousemove', (e) => {
+    const { x, y } = screenToCanvas(e.clientX, e.clientY);
+
+    // Cherche la route la plus proche dans un rayon de 18px (coordonnées canvas)
+    const HIT_RADIUS = 18;
+    let closest = null;
+    let closestDist = Infinity;
+
+    roads.forEach(road => {
+        const d = distPointToSegment(
+            x, y,
+            road.from.x, road.from.y,
+            road.to.x,   road.to.y
+        );
+        if (d < HIT_RADIUS && d < closestDist) {
+            closestDist = d;
+            closest = road;
+        }
+    });
+
+    if (closest) {
+        // Contenu
+        ttTitle.textContent     = closest.name;
+        ttDot.style.background  = stateColors[closest.state];
+        ttStateText.textContent = stateLabels[closest.state];
+
+        // Position — suit la souris avec un petit décalage
+        const rect = canvas.getBoundingClientRect();
+        const canvasZone = document.getElementById('canvas-zone');
+        const zoneRect = canvasZone.getBoundingClientRect();
+
+        let left = e.clientX - zoneRect.left + 14;
+        let top  = e.clientY - zoneRect.top  - 10;
+
+        // Empêche le tooltip de déborder à droite
+        tooltip.style.display = 'block';
+        const ttW = tooltip.offsetWidth;
+        if (left + ttW > zoneRect.width - 10) left = e.clientX - zoneRect.left - ttW - 14;
+
+        tooltip.style.left = left + 'px';
+        tooltip.style.top  = top  + 'px';
+    } else {
+        tooltip.style.display = 'none';
+    }
+});
+
+canvas.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+});
+
+// ─────────────────────────────────────────────────────────────
+//  DONUT — dessin sur #donut-canvas
+// ─────────────────────────────────────────────────────────────
+const donutCanvas = document.getElementById('donut-canvas');
+const dCtx        = donutCanvas.getContext('2d');
+
+function drawDonut(counts, total) {
+    const W = donutCanvas.width;
+    const H = donutCanvas.height;
+    const cx = W / 2, cy = H / 2;
+    const outerR = 40, innerR = 24;
+
+    dCtx.clearRect(0, 0, W, H);
+
+    if (total === 0) {
+        // Cercle gris si pas encore de données
+        dCtx.beginPath();
+        dCtx.arc(cx, cy, outerR, 0, Math.PI * 2);
+        dCtx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
+        dCtx.fillStyle = '#1e293b';
+        dCtx.fill();
+        return;
+    }
+
+    const slices = [
+        { count: counts.fluide,  color: '#4ade80' },
+        { count: counts.ralenti, color: '#fb923c' },
+        { count: counts.bouchon, color: '#ef4444' },
+    ];
+
+    let startAngle = -Math.PI / 2; // commence en haut
+
+    slices.forEach(slice => {
+        if (slice.count === 0) return;
+        const angle = (slice.count / total) * Math.PI * 2;
+
+        dCtx.beginPath();
+        dCtx.moveTo(cx, cy);
+        dCtx.arc(cx, cy, outerR, startAngle, startAngle + angle);
+        dCtx.closePath();
+        dCtx.fillStyle = slice.color;
+        dCtx.fill();
+
+        startAngle += angle;
+    });
+
+    // Trou central (anneau)
+    dCtx.beginPath();
+    dCtx.arc(cx, cy, innerR, 0, Math.PI * 2);
+    dCtx.fillStyle = '#0f3460'; // même couleur que .section
+    dCtx.fill();
+
+    // Nombre total au centre
+    dCtx.fillStyle = '#e2e8f0';
+    dCtx.font = '700 14px Inter, sans-serif';
+    dCtx.textAlign = 'center';
+    dCtx.textBaseline = 'middle';
+    dCtx.fillText(total, cx, cy);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Dessin canvas principal
 // ─────────────────────────────────────────────────────────────
 function drawBackground() {
     if (bgImg.complete) {
@@ -202,7 +342,6 @@ function drawTrafficLights() {
 
 function drawVehicles() {
     const laneOffset = 12;
-
     vehicles.forEach(v => {
         const rawX = v.road.from.x + (v.road.to.x - v.road.from.x) * v.progress;
         const rawY = v.road.from.y + (v.road.to.y - v.road.from.y) * v.progress;
@@ -212,16 +351,12 @@ function drawVehicles() {
 
         const perpX = (-dy / len) * laneOffset;
         const perpY = (dx / len) * laneOffset;
-
         const isHorizontal = Math.abs(dx) > Math.abs(dy);
         const vertCorrection = isHorizontal ? -14 : 0;
 
         const x = rawX + perpX;
         const y = rawY + perpY + vertCorrection;
         const angle = Math.atan2(dy, dx) + Math.PI / 2;
-
-        const displayW = 22;
-        const displayH = 38;
 
         ctx.save();
         ctx.translate(x, y);
@@ -230,7 +365,7 @@ function drawVehicles() {
             ctx.drawImage(
                 carsImg,
                 v.sprite.sx, v.sprite.sy, v.sprite.sw, v.sprite.sh,
-                -displayW / 2, -displayH / 2, displayW, displayH
+                -11, -19, 22, 38
             );
         }
         ctx.restore();
@@ -260,7 +395,6 @@ function updateVehicles() {
 function updateDashboard() {
     const counts = { fluide: 0, ralenti: 0, bouchon: 0 };
     vehicles.forEach(v => counts[v.road.state]++);
-
     const total = vehicles.length;
 
     document.getElementById('count-total').textContent   = total;
@@ -271,6 +405,14 @@ function updateDashboard() {
     document.getElementById('bar-fluide').style.width  = (counts.fluide  / total * 100) + '%';
     document.getElementById('bar-ralenti').style.width = (counts.ralenti / total * 100) + '%';
     document.getElementById('bar-bouchon').style.width = (counts.bouchon / total * 100) + '%';
+
+    // Pourcentages donut
+    document.getElementById('pct-fluide').textContent  = Math.round(counts.fluide  / total * 100) + '%';
+    document.getElementById('pct-ralenti').textContent = Math.round(counts.ralenti / total * 100) + '%';
+    document.getElementById('pct-bouchon').textContent = Math.round(counts.bouchon / total * 100) + '%';
+
+    // Redessine le donut
+    drawDonut(counts, total);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -294,7 +436,7 @@ function loop() {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Événements des boutons
+//  Événements boutons
 // ─────────────────────────────────────────────────────────────
 btnStart.addEventListener('click', () => {
     if (!running) {
@@ -323,7 +465,7 @@ btnReset.addEventListener('click', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
-//  Lancement : cache l'overlay quand les 4 images sont prêtes
+//  Lancement
 // ─────────────────────────────────────────────────────────────
 let imagesLoaded = 0;
 const totalImages = 4;
@@ -341,7 +483,7 @@ const loadStart = Date.now();
                 const overlay = document.getElementById('loading-overlay');
                 overlay.classList.add('hidden');
                 setTimeout(() => overlay.remove(), 400);
-                setButtons('running'); // Démarrer grisé dès le lancement
+                setButtons('running');
                 loop();
             }, remaining);
         }
