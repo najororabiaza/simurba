@@ -277,6 +277,32 @@
             text-align: right;
         }
 
+        /* ── Mode clair ── */
+        body.light {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        body.light #dashboard        { background: #e2e8f0; }
+        body.light .section          { background: #cbd5e1; }
+        body.light #loading-overlay  { background: #f1f5f9; }
+        body.light #canvas-zone      { border-color: #cbd5e1; }
+        body.light .stat-bar-bg      { background: #94a3b8; }
+        body.light .clock-sub        { color: #64748b; }
+        body.light .section-title    { color: #64748b; }
+        body.light #btn-theme        { background: #cbd5e1; }
+        body.light h2                { color: #b91c1c; }
+        body.light #status           { color: #15803d !important; }
+        body.light .stat-label       { color: #1e293b; }
+        body.light #clock            { color: #1e293b; }
+        body.light .donut-legend     { color: #1e293b; }
+        body.light .donut-legend-pct { color: #1e293b; }
+        body.light .section-title    { color: #475569; }
+        body.light .clock-sub        { color: #475569; }
+        body.light p                 { color: #1e293b; }
+        body.light span              { color: #1e293b; }
+        body.light .slider-row label { color: #475569; }
+        body.light .slider-row span  { color: #b91c1c; }
+
         /* ── Scrollbar ── */
         #dashboard::-webkit-scrollbar { width: 4px; }
         #dashboard::-webkit-scrollbar-track { background: transparent; }
@@ -323,7 +349,10 @@
         <!-- En-tête -->
         <div style="display:flex; align-items:center; justify-content:space-between;">
             <h2>🚦 Simurba</h2>
-            <span style="font-size:10px; font-weight:600; color:#475569; background:#0f3460; border-radius:4px; padding:3px 7px; letter-spacing:0.05em;">v3</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button id="btn-theme" title="Mode clair / nuit" style="width:auto; padding:3px 8px; font-size:14px; background:#0f3460; border-radius:4px; margin:0; line-height:1;">🌙</button>
+                <span style="font-size:10px; font-weight:600; color:#475569; background:#0f3460; border-radius:4px; padding:3px 7px; letter-spacing:0.05em;">v3</span>
+            </div>
         </div>
 
         <!-- Section 1 : Contrôles -->

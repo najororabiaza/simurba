@@ -513,6 +513,12 @@ btnStop.addEventListener('click', () => {
     setButtons('stopped');
 });
 
+// ── Toggle thème ──
+document.getElementById('btn-theme').addEventListener('click', () => {
+    const isLight = document.body.classList.toggle('light');
+    document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';
+});
+
 // ─────────────────────────────────────────────────────────────
 //  Lancement
 // ─────────────────────────────────────────────────────────────
