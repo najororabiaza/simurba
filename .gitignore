@@ -5,3 +5,5 @@ db.sqlite3
 .env
 venv/
 .DS_Store
+archive
+
