@@ -105,10 +105,12 @@ function updateClock() {
 const btnStart = document.getElementById('btn-start');
 const btnPause = document.getElementById('btn-pause');
 const btnReset = document.getElementById('btn-reset');
+const btnStop = document.getElementById('btn-stop');
 
 function setButtons(state) {
     btnStart.disabled = (state === 'running');
-    btnPause.disabled = (state === 'paused');
+    btnPause.disabled = (state === 'paused' || state === 'stopped');
+    btnStop.disabled  = (state === 'stopped');
 }
 
 function setStatus(text, color, paused = false) {
@@ -436,6 +438,39 @@ function loop() {
 }
 
 // ─────────────────────────────────────────────────────────────
+//  Keyboard shortcuts
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+    // Ignore si focus sur un input
+    if (e.target.tagName === 'INPUT') return;
+
+    switch (e.key) {
+        case ' ': // Espace : pause/play
+            e.preventDefault();
+            if (running) btnPause.click();
+            else         btnStart.click();
+            break;
+        case 'r': case 'R': // R = reset
+            btnReset.click();
+            break;
+        case 's': case 'S': // S = stop
+            btnStop.click();
+            break;
+        case '+': case '=': // + =  vitesse +0.5
+            speedFactor = Math.min(5, speedFactor + 0.5);
+            speedSlider.value = speedFactor;
+            speedLabel.textContent = '×' + speedFactor;
+            break;
+        case '-': // - = vitesse -0.5
+            speedFactor = Math.max(1, speedFactor - 0.5);
+            speedSlider.value = speedFactor;
+            speedLabel.textContent = '×' + speedFactor;
+            break;
+    }
+});
+
+
+// ─────────────────────────────────────────────────────────────
 //  Événements boutons
 // ─────────────────────────────────────────────────────────────
 btnStart.addEventListener('click', () => {
@@ -462,6 +497,20 @@ btnReset.addEventListener('click', () => {
     setStatus('en cours...', '#4ade80', false);
     setButtons('running');
     if (!running) { running = true; loop(); }
+});
+
+btnStop.addEventListener('click', () => {
+    running = false;
+    cancelAnimationFrame(animationId);
+    // Remet tout à zéro
+    vehicles.forEach(v => { v.progress = 0; });
+    simSeconds = 0;
+    frameAcc   = 0;
+    document.getElementById('clock').textContent = '00:00';
+    // Efface le canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setStatus('arrêté', '#ef4444', true);
+    setButtons('stopped');
 });
 
 // ─────────────────────────────────────────────────────────────
