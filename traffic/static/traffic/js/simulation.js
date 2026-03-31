@@ -404,9 +404,20 @@ function updateDashboard() {
     document.getElementById('count-ralenti').textContent = counts.ralenti;
     document.getElementById('count-bouchon').textContent = counts.bouchon;
 
-    document.getElementById('bar-fluide').style.width  = (counts.fluide  / total * 100) + '%';
-    document.getElementById('bar-ralenti').style.width = (counts.ralenti / total * 100) + '%';
-    document.getElementById('bar-bouchon').style.width = (counts.bouchon / total * 100) + '%';
+    // Barres + valeurs flottantes
+    const bars = [
+        { bar: 'bar-fluide',  tip: 'tip-fluide',  count: counts.fluide  },
+        { bar: 'bar-ralenti', tip: 'tip-ralenti',  count: counts.ralenti },
+        { bar: 'bar-bouchon', tip: 'tip-bouchon',  count: counts.bouchon },
+    ];
+    bars.forEach(({ bar, tip, count }) => {
+        const pct = total > 0 ? count / total * 100 : 0;
+        const barEl = document.getElementById(bar);
+        const tipEl = document.getElementById(tip);
+        barEl.style.width = pct + '%';
+        tipEl.textContent = Math.round(pct) + '%';
+        barEl.classList.toggle('has-data', count > 0);
+    });
 
     // Pourcentages donut
     document.getElementById('pct-fluide').textContent  = Math.round(counts.fluide  / total * 100) + '%';
