@@ -9,14 +9,64 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ── Tokens de couleur ── */
+        :root {
+            /* Arrière-plans */
+            --color-bg-app:        #1a1a2e;
+            --color-bg-dashboard:  #16213e;
+            --color-bg-section:    #0f3460;
+            --color-bg-deep:       #1a1a2e;
+
+            /* Bordures */
+            --color-border-subtle: #333;
+            --color-border-panel:  #334155;
+
+            /* Texte */
+            --color-text-primary:  #ffffff;
+            --color-text-muted:    #aaa;
+            --color-text-hint:     #475569;
+            --color-text-sub:      #94a3b8;
+            --color-text-clock:    #e2e8f0;
+
+            /* Accent / brand */
+            --color-accent:        #e94560;
+
+            /* États trafic */
+            --color-state-fluide:  #4ade80;
+            --color-state-ralenti: #fb923c;
+            --color-state-bouchon: #ef4444;
+
+            /* Boutons */
+            --color-btn-start:     #22c55e;
+            --color-btn-start-h:   #16a34a;
+            --color-btn-pause:     #fb923c;
+            --color-btn-pause-h:   #ea7a1e;
+            --color-btn-reset:     #64748b;
+            --color-btn-reset-h:   #475569;
+            --color-btn-stop:      #dc2626;
+            --color-btn-stop-h:    #b91c1c;
+            --color-btn-theme-bg:  #0f3460;
+
+            /* Slider */
+            --color-slider-track:  #334155;
+            --color-slider-thumb:  #e94560;
+
+            /* Scrollbar */
+            --color-scrollbar:     #333;
+
+            /* Overlay */
+            --color-overlay-bg:    rgba(15, 23, 42, 0.92);
+            --color-overlay-border:#334155;
+        }
+
         /* ── Reset ── */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
             height: 100%;
             font-family: 'Inter', sans-serif;
-            background: #1a1a2e;
-            color: white;
+            background: var(--color-bg-app);
+            color: var(--color-text-primary);
         }
 
         body {
@@ -35,7 +85,7 @@
             display: flex;
             align-items: stretch;
             justify-content: center;
-            border-right: 2px solid #333;
+            border-right: 2px solid var(--color-border-subtle);
             overflow: hidden;
             padding: 8px;
         }
@@ -52,8 +102,8 @@
             position: absolute;
             pointer-events: none;         /* ne bloque pas la souris */
             display: none;
-            background: rgba(15, 23, 42, 0.92);
-            border: 1px solid #334155;
+            background: var(--color-overlay-bg);
+            border: 1px solid var(--color-overlay-border);
             border-radius: 8px;
             padding: 8px 12px;
             font-size: 12px;
@@ -72,7 +122,7 @@
 
         #route-tooltip .tt-state {
             font-size: 11px;
-            color: #94a3b8;
+            color: var(--color-text-sub);
         }
 
         #route-tooltip .tt-dot {
@@ -91,7 +141,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #1a1a2e;
+            background: var(--color-bg-app);
             z-index: 10;
             transition: opacity 0.4s ease;
         }
@@ -109,7 +159,7 @@
         #dashboard {
             flex: 0 0 280px;
             padding: 16px;
-            background: #16213e;
+            background: var(--color-bg-dashboard);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -120,7 +170,7 @@
         @media (max-width: 1023px) {
             body { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; }
             #canvas-zone {
-                border-right: none; border-bottom: 2px solid #333;
+                border-right: none; border-bottom: 2px solid var(--color-border-subtle);
                 flex: none; width: 100%; height: 60vw;
                 max-height: 520px; min-height: 300px;
             }
@@ -136,7 +186,7 @@
         @media (max-width: 767px) {
             body { flex-direction: column; height: auto; overflow-y: auto; }
             #canvas-zone {
-                border-right: none; border-bottom: 2px solid #333;
+                border-right: none; border-bottom: 2px solid var(--color-border-subtle);
                 height: 75vw; max-height: 400px; min-height: 220px;
             }
             #dashboard { display: flex; flex-direction: column; gap: 12px; padding: 12px; width: 100%; }
@@ -148,14 +198,23 @@
         /* ─────────────────────────────────────────
            Composants
         ───────────────────────────────────────── */
-        h2 { color: #e94560; font-size: clamp(15px, 2vw, 20px); }
+        h2 { color: var(--color-accent); font-size: clamp(15px, 2vw, 20px); }
 
-        .section { background: #0f3460; border-radius: 8px; padding: 12px; }
+        .section { background: var(--color-bg-section); border-radius: 8px; padding: 12px; }
 
+        /* ── Section title avec icône ── */
         .section-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 11px; font-weight: 600;
-            letter-spacing: 0.08em; color: #aaa;
+            letter-spacing: 0.08em; color: var(--color-text-muted);
             margin-bottom: 10px; text-transform: uppercase;
+        }
+        .section-title svg {
+            width: 13px; height: 13px;
+            flex-shrink: 0;
+            opacity: 0.7;
         }
 
         /* ── Boutons ── */
@@ -163,45 +222,45 @@
             display: block; width: 100%; margin-bottom: 8px;
             padding: 9px; border: none; border-radius: 6px;
             cursor: pointer; font-size: clamp(12px, 1.5vw, 14px);
-            font-family: 'Inter', sans-serif; color: white;
+            font-family: 'Inter', sans-serif; color: var(--color-text-primary);
             transition: background 0.15s, opacity 0.15s;
         }
         button:last-of-type { margin-bottom: 0; }
-        #btn-start       { background: #22c55e; }
-        #btn-start:hover { background: #16a34a; }
-        #btn-pause       { background: #fb923c; }
-        #btn-pause:hover { background: #ea7a1e; }
-        #btn-reset       { background: #64748b; }
-        #btn-reset:hover { background: #475569; }
+        #btn-start       { background: var(--color-btn-start); }
+        #btn-start:hover { background: var(--color-btn-start-h); }
+        #btn-pause       { background: var(--color-btn-pause); }
+        #btn-pause:hover { background: var(--color-btn-pause-h); }
+        #btn-reset       { background: var(--color-btn-reset); }
+        #btn-reset:hover { background: var(--color-btn-reset-h); }
         button:disabled { opacity: 0.35; cursor: not-allowed; }
-        #btn-start:disabled:hover { background: #22c55e; }
-        #btn-pause:disabled:hover { background: #fb923c; }
-        #btn-reset:disabled:hover { background: #64748b; }
-        #btn-stop       { background: #dc2626; margin-top: 4px; }
-        #btn-stop:hover { background: #b91c1c; }
-        #btn-stop:disabled:hover { background: #dc2626; }
+        #btn-start:disabled:hover { background: var(--color-btn-start); }
+        #btn-pause:disabled:hover { background: var(--color-btn-pause); }
+        #btn-reset:disabled:hover { background: var(--color-btn-reset); }
+        #btn-stop       { background: var(--color-btn-stop); margin-top: 4px; }
+        #btn-stop:hover { background: var(--color-btn-stop-h); }
+        #btn-stop:disabled:hover { background: var(--color-btn-stop); }
 
         /* ── Slider ── */
         .slider-row {
             display: flex; align-items: center;
             gap: 8px; margin-top: 8px;
         }
-        .slider-row label { font-size: 12px; color: #ccc; white-space: nowrap; }
-        .slider-row span  { font-size: 12px; color: #e94560; min-width: 28px; text-align: right; }
+        .slider-row label { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
+        .slider-row span  { font-size: 12px; color: var(--color-accent); min-width: 28px; text-align: right; }
         .slider-row input[type=range] {
             flex: 1; min-width: 0;
             -webkit-appearance: none; appearance: none;
             height: 4px; border-radius: 2px;
-            background: #334155; outline: none;
+            background: var(--color-slider-track); outline: none;
         }
         .slider-row input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 14px; height: 14px; border-radius: 50%;
-            background: #e94560; cursor: pointer;
+            background: var(--color-slider-thumb); cursor: pointer;
         }
         .slider-row input[type=range]::-moz-range-thumb {
             width: 14px; height: 14px; border-radius: 50%;
-            background: #e94560; border: none; cursor: pointer;
+            background: var(--color-slider-thumb); border: none; cursor: pointer;
         }
 
         /* ── Statut ── */
@@ -218,25 +277,25 @@
         .status-dot {
             display: inline-block; width: 8px; height: 8px;
             border-radius: 50%; margin-right: 6px;
-            background: #4ade80;
+            background: var(--color-state-fluide);
             animation: pulse 1.4s ease-in-out infinite;
             vertical-align: middle;
         }
-        .status-dot.paused { background: #fb923c; animation: none; }
+        .status-dot.paused { background: var(--color-state-ralenti); animation: none; }
 
         /* ── Horloge ── */
         #clock {
             font-size: clamp(18px, 3vw, 24px); font-weight: 700;
-            color: #e2e8f0; letter-spacing: 0.05em;
+            color: var(--color-text-clock); letter-spacing: 0.05em;
             text-align: center; margin: 2px 0;
         }
-        .clock-sub { font-size: 11px; color: #666; text-align: center; }
+        .clock-sub { font-size: 11px; color: var(--color-text-hint); text-align: center; }
 
         /* ── Stats trafic ── */
         .stat-item { margin-bottom: 10px; }
         .stat-item:last-child { margin-bottom: 0; }
         .stat-label { font-size: clamp(11px, 1.4vw, 13px); margin-bottom: 4px; }
-        .stat-bar-bg { background: #1a1a2e; height: 5px; border-radius: 3px; overflow: hidden; }
+        .stat-bar-bg { background: var(--color-bg-deep); height: 5px; border-radius: 3px; overflow: hidden; }
         .stat-bar { height: 5px; border-radius: 3px; width: 0%; transition: width 0.5s; }
 
         /* ── Donut ── */
@@ -277,36 +336,30 @@
             text-align: right;
         }
 
-        /* ── Mode clair ── */
+        /* ── Mode clair — surcharge des tokens ── */
         body.light {
-            background: #f1f5f9;
-            color: #1e293b;
+            --color-bg-app:        #f1f5f9;
+            --color-bg-dashboard:  #e2e8f0;
+            --color-bg-section:    #cbd5e1;
+            --color-bg-deep:       #94a3b8;
+            --color-border-subtle: #cbd5e1;
+            --color-text-primary:  #1e293b;
+            --color-text-muted:    #475569;
+            --color-text-hint:     #64748b;
+            --color-text-sub:      #64748b;
+            --color-text-clock:    #1e293b;
+            --color-accent:        #b91c1c;
+            --color-btn-theme-bg:  #cbd5e1;
+            --color-scrollbar:     #94a3b8;
+            --color-overlay-bg:    rgba(226, 232, 240, 0.92);
+            --color-overlay-border:#94a3b8;
         }
-        body.light #dashboard        { background: #e2e8f0; }
-        body.light .section          { background: #cbd5e1; }
-        body.light #loading-overlay  { background: #f1f5f9; }
-        body.light #canvas-zone      { border-color: #cbd5e1; }
-        body.light .stat-bar-bg      { background: #94a3b8; }
-        body.light .clock-sub        { color: #64748b; }
-        body.light .section-title    { color: #64748b; }
-        body.light #btn-theme        { background: #cbd5e1; }
-        body.light h2                { color: #b91c1c; }
-        body.light #status           { color: #15803d !important; }
-        body.light .stat-label       { color: #1e293b; }
-        body.light #clock            { color: #1e293b; }
-        body.light .donut-legend     { color: #1e293b; }
-        body.light .donut-legend-pct { color: #1e293b; }
-        body.light .section-title    { color: #475569; }
-        body.light .clock-sub        { color: #475569; }
-        body.light p                 { color: #1e293b; }
-        body.light span              { color: #1e293b; }
-        body.light .slider-row label { color: #475569; }
-        body.light .slider-row span  { color: #b91c1c; }
+        body.light #status { color: #15803d !important; }
 
         /* ── Scrollbar ── */
         #dashboard::-webkit-scrollbar { width: 4px; }
         #dashboard::-webkit-scrollbar-track { background: transparent; }
-        #dashboard::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        #dashboard::-webkit-scrollbar-thumb { background: var(--color-scrollbar); border-radius: 2px; }
 
         /* ── Animations ── */
         @keyframes fadeUp {
@@ -350,20 +403,26 @@
         <div style="display:flex; align-items:center; justify-content:space-between;">
             <h2>🚦 Simurba</h2>
             <div style="display:flex; align-items:center; gap:8px;">
-                <button id="btn-theme" title="Mode clair / nuit" style="width:auto; padding:3px 8px; font-size:14px; background:#0f3460; border-radius:4px; margin:0; line-height:1;">🌙</button>
-                <span style="font-size:10px; font-weight:600; color:#475569; background:#0f3460; border-radius:4px; padding:3px 7px; letter-spacing:0.05em;">v3</span>
+                <button id="btn-theme" title="Mode clair / nuit" style="width:auto; padding:3px 8px; font-size:14px; background:var(--color-btn-theme-bg); border-radius:4px; margin:0; line-height:1;">🌙</button>
+                <span style="font-size:10px; font-weight:600; color:var(--color-text-hint); background:var(--color-btn-theme-bg); border-radius:4px; padding:3px 7px; letter-spacing:0.05em;">v3</span>
             </div>
         </div>
 
         <!-- Section 1 : Contrôles -->
         <div class="section">
-            <p class="section-title">Contrôles</p>
+            <p class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/>
+                </svg>
+                Contrôles
+            </p>
 
             <div class="status-row">
-                <span style="font-size:12px; color:#aaa;">État :</span>
+                <span style="font-size:12px; color:var(--color-text-muted);">État :</span>
                 <span style="display:flex; align-items:center;">
                     <span class="status-dot" id="status-dot"></span>
-                    <span id="status" style="color:#4ade80;">en cours...</span>
+                    <span id="status" style="color:var(--color-state-fluide);">en cours...</span>
                 </span>
             </div>
 
@@ -378,38 +437,48 @@
                 <label>⚡</label>
                 <span id="speed-label">×1</span>
             </div>
-            <p style="font-size:10px; color:#475569; margin-top:8px; line-height:1.6;">
-                ⌨️ <kbd style="background:#1a1a2e; border-radius:3px; padding:1px 5px; font-size:10px;">Espace</kbd> pause/play &nbsp;
-                <kbd style="background:#1a1a2e; border-radius:3px; padding:1px 5px; font-size:10px;">R</kbd> reset &nbsp;
-                <kbd style="background:#1a1a2e; border-radius:3px; padding:1px 5px; font-size:10px;">+/-</kbd> vitesse
+            <p style="font-size:10px; color:var(--color-text-hint); margin-top:8px; line-height:1.6;">
+                ⌨️ <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">Espace</kbd> pause/play &nbsp;
+                <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">R</kbd> reset &nbsp;
+                <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">+/-</kbd> vitesse
             </p>
         </div>
 
         <!-- Section 2 : Horloge -->
         <div class="section">
-            <p class="section-title">Temps de simulation</p>
+            <p class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Temps de simulation
+            </p>
             <div id="clock">00:00</div>
             <p class="clock-sub">mm:ss écoulées</p>
         </div>
 
         <!-- Section 3 : Densité globale (donut) -->
         <div class="section">
-            <p class="section-title">Densité globale</p>
+            <p class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                </svg>
+                Densité globale
+            </p>
             <div class="donut-wrapper">
                 <canvas id="donut-canvas" width="90" height="90"></canvas>
                 <div class="donut-legend">
                     <div class="donut-legend-item">
-                        <span class="donut-legend-dot" style="background:#4ade80;"></span>
+                        <span class="donut-legend-dot" style="background:var(--color-state-fluide);"></span>
                         <span>Fluide</span>
                         <span class="donut-legend-pct" id="pct-fluide">—</span>
                     </div>
                     <div class="donut-legend-item">
-                        <span class="donut-legend-dot" style="background:#fb923c;"></span>
+                        <span class="donut-legend-dot" style="background:var(--color-state-ralenti);"></span>
                         <span>Ralenti</span>
                         <span class="donut-legend-pct" id="pct-ralenti">—</span>
                     </div>
                     <div class="donut-legend-item">
-                        <span class="donut-legend-dot" style="background:#ef4444;"></span>
+                        <span class="donut-legend-dot" style="background:var(--color-state-bouchon);"></span>
                         <span>Bouchon</span>
                         <span class="donut-legend-pct" id="pct-bouchon">—</span>
                     </div>
@@ -419,38 +488,44 @@
 
         <!-- Section 4 : Trafic en direct -->
         <div class="section">
-            <p class="section-title">Trafic en direct</p>
+            <p class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="7" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="17" r="1" fill="currentColor"/>
+                </svg>
+                Trafic en direct
+            </p>
 
             <div class="stat-item">
-                <div class="stat-label" style="color:#94a3b8;">
+                <div class="stat-label" style="color:var(--color-text-sub);">
                     🚗 Véhicules actifs : <strong id="count-total">0</strong>
                 </div>
             </div>
 
             <div class="stat-item">
                 <div class="stat-label">
-                    <span style="color:#4ade80;">●</span> Fluide : <span id="count-fluide">0</span>
+                    <span style="color:var(--color-state-fluide);">●</span> Fluide : <span id="count-fluide">0</span>
                 </div>
                 <div class="stat-bar-bg">
-                    <div class="stat-bar" id="bar-fluide" style="background:#4ade80;"></div>
+                    <div class="stat-bar" id="bar-fluide" style="background:var(--color-state-fluide);"></div>
                 </div>
             </div>
 
             <div class="stat-item">
                 <div class="stat-label">
-                    <span style="color:#fb923c;">●</span> Ralenti : <span id="count-ralenti">0</span>
+                    <span style="color:var(--color-state-ralenti);">●</span> Ralenti : <span id="count-ralenti">0</span>
                 </div>
                 <div class="stat-bar-bg">
-                    <div class="stat-bar" id="bar-ralenti" style="background:#fb923c;"></div>
+                    <div class="stat-bar" id="bar-ralenti" style="background:var(--color-state-ralenti);"></div>
                 </div>
             </div>
 
             <div class="stat-item">
                 <div class="stat-label">
-                    <span style="color:#ef4444;">●</span> Bouchon : <span id="count-bouchon">0</span>
+                    <span style="color:var(--color-state-bouchon);">●</span> Bouchon : <span id="count-bouchon">0</span>
                 </div>
                 <div class="stat-bar-bg">
-                    <div class="stat-bar" id="bar-bouchon" style="background:#ef4444;"></div>
+                    <div class="stat-bar" id="bar-bouchon" style="background:var(--color-state-bouchon);"></div>
                 </div>
             </div>
         </div>
