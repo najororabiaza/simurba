@@ -74,14 +74,32 @@ const trafficLights = nodes.map(node => ({
 }));
 
 // ─────────────────────────────────────────────────────────────
-//  Contrôle de vitesse
+//  Contrôle de vitesse — slider + présets
 // ─────────────────────────────────────────────────────────────
+let running     = false;   // démarré uniquement après chargement des images
+let animationId = null;
+
 let speedFactor = 1;
 const speedSlider = document.getElementById('speed-slider');
 const speedLabel  = document.getElementById('speed-label');
+const presetBtns  = document.querySelectorAll('.speed-preset');
+
+function setSpeed(value) {
+    speedFactor = value;
+    speedSlider.value = value;
+    speedLabel.textContent = '×' + value;
+    // Met à jour l'état actif du préset correspondant
+    presetBtns.forEach(btn => {
+        btn.classList.toggle('active', parseFloat(btn.dataset.speed) === value);
+    });
+}
+
 speedSlider.addEventListener('input', () => {
-    speedFactor = parseFloat(speedSlider.value);
-    speedLabel.textContent = '×' + speedFactor;
+    setSpeed(parseFloat(speedSlider.value));
+});
+
+presetBtns.forEach(btn => {
+    btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -105,11 +123,12 @@ function updateClock() {
 const btnStart = document.getElementById('btn-start');
 const btnPause = document.getElementById('btn-pause');
 const btnReset = document.getElementById('btn-reset');
-const btnStop = document.getElementById('btn-stop');
+const btnStop  = document.getElementById('btn-stop');
 
 function setButtons(state) {
     btnStart.disabled = (state === 'running');
     btnPause.disabled = (state === 'paused' || state === 'stopped');
+    btnReset.disabled = false; // toujours disponible
     btnStop.disabled  = (state === 'stopped');
 }
 
@@ -431,9 +450,6 @@ function updateDashboard() {
 // ─────────────────────────────────────────────────────────────
 //  Boucle principale
 // ─────────────────────────────────────────────────────────────
-let running = true;
-let animationId;
-
 function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
@@ -468,14 +484,10 @@ document.addEventListener('keydown', (e) => {
             btnStop.click();
             break;
         case '+': case '=': // + =  vitesse +0.5
-            speedFactor = Math.min(5, speedFactor + 0.5);
-            speedSlider.value = speedFactor;
-            speedLabel.textContent = '×' + speedFactor;
+            setSpeed(Math.min(5, speedFactor + 0.5));
             break;
         case '-': // - = vitesse -0.5
-            speedFactor = Math.max(1, speedFactor - 0.5);
-            speedSlider.value = speedFactor;
-            speedLabel.textContent = '×' + speedFactor;
+            setSpeed(Math.max(1, speedFactor - 0.5));
             break;
     }
 });

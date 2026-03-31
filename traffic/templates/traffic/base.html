@@ -236,25 +236,40 @@
 
         /* ── Boutons ── */
         button {
-            display: block; width: 100%; margin-bottom: 8px;
+            display: block; width: 100%; margin-bottom: 0;
             padding: 9px; border: none; border-radius: 6px;
             cursor: pointer; font-size: clamp(12px, 1.5vw, 14px);
             font-family: 'Inter', sans-serif; color: var(--color-text-primary);
             transition: background 0.15s, opacity 0.15s;
         }
-        button:last-of-type { margin-bottom: 0; }
+        button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* Groupe primaire — Play | Pause côte à côte */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        /* Groupe secondaire — Reset | Stop côte à côte */
+        .btn-group-secondary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
         #btn-start       { background: var(--color-btn-start); }
         #btn-start:hover { background: var(--color-btn-start-h); }
+        #btn-start:disabled:hover { background: var(--color-btn-start); }
         #btn-pause       { background: var(--color-btn-pause); }
         #btn-pause:hover { background: var(--color-btn-pause-h); }
+        #btn-pause:disabled:hover { background: var(--color-btn-pause); }
         #btn-reset       { background: var(--color-btn-reset); }
         #btn-reset:hover { background: var(--color-btn-reset-h); }
-        button:disabled { opacity: 0.35; cursor: not-allowed; }
-        #btn-start:disabled:hover { background: var(--color-btn-start); }
-        #btn-pause:disabled:hover { background: var(--color-btn-pause); }
         #btn-reset:disabled:hover { background: var(--color-btn-reset); }
-        #btn-stop       { background: var(--color-btn-stop); margin-top: 4px; }
-        #btn-stop:hover { background: var(--color-btn-stop-h); }
+        #btn-stop        { background: var(--color-btn-stop); }
+        #btn-stop:hover  { background: var(--color-btn-stop-h); }
         #btn-stop:disabled:hover { background: var(--color-btn-stop); }
 
         /* ── Slider ── */
@@ -278,6 +293,38 @@
         .slider-row input[type=range]::-moz-range-thumb {
             width: 14px; height: 14px; border-radius: 50%;
             background: var(--color-slider-thumb); border: none; cursor: pointer;
+        }
+
+        /* ── Présets de vitesse ── */
+        .speed-presets {
+            display: flex;
+            gap: 5px;
+            margin-top: 7px;
+        }
+        .speed-preset {
+            flex: 1;
+            padding: 4px 0;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            background: var(--color-bg-deep);
+            border: 1px solid var(--color-border-subtle);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.12s, color 0.12s, border-color 0.12s;
+            text-align: center;
+            width: auto;
+            display: block;
+            margin-bottom: 0;
+        }
+        .speed-preset:hover {
+            background: var(--color-bg-section);
+            color: var(--color-text-primary);
+        }
+        .speed-preset.active {
+            background: var(--color-accent);
+            color: #fff;
+            border-color: var(--color-accent);
         }
 
         /* ── Statut ── */
@@ -483,10 +530,14 @@
                 </span>
             </div>
 
-            <button id="btn-start">▶ Démarrer</button>
-            <button id="btn-pause">⏸ Pauser</button>
-            <button id="btn-reset">↺ Réinitialiser</button>
-            <button id="btn-stop">⏹ Arrêter</button>
+            <div class="btn-group">
+                <button type="button" id="btn-start">▶ Démarrer</button>
+                <button type="button" id="btn-pause">⏸ Pauser</button>
+            </div>
+            <div class="btn-group-secondary">
+                <button type="button" id="btn-reset">↺ Réinitialiser</button>
+                <button type="button" id="btn-stop">⏹ Arrêter</button>
+            </div>
 
             <div class="slider-row">
                 <label>🐢</label>
@@ -494,6 +545,15 @@
                 <label>⚡</label>
                 <span id="speed-label">×1</span>
             </div>
+
+            <!-- Présets de vitesse rapide -->
+            <div class="speed-presets">
+                <button type="button" class="speed-preset active" data-speed="1">×1</button>
+                <button type="button" class="speed-preset" data-speed="2">×2</button>
+                <button type="button" class="speed-preset" data-speed="3">×3</button>
+                <button type="button" class="speed-preset" data-speed="5">×5</button>
+            </div>
+
             <p style="font-size:10px; color:var(--color-text-hint); margin-top:8px; line-height:1.6;">
                 ⌨️ <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">Espace</kbd> pause/play &nbsp;
                 <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">R</kbd> reset &nbsp;
