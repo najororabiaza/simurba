@@ -4,7 +4,7 @@ canvas.width = 750;
 canvas.height = 650;
 
 // ─────────────────────────────────────────────────────────────
-//  Chargement des images
+// Chargement des images
 // ─────────────────────────────────────────────────────────────
 const bgImg = new Image();
 bgImg.src = '/static/traffic/img/backgroundGrass.jpg';
@@ -19,7 +19,7 @@ const tlGreenImg = new Image();
 tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
 
 // ─────────────────────────────────────────────────────────────
-//  Sprites — bk_cars1.png
+// Sprites — bk_cars1.png
 // ─────────────────────────────────────────────────────────────
 const carSprites = [
     { sx: 380, sy:  32, sw:  96, sh: 194 }, // Ambulance
@@ -33,7 +33,7 @@ const carSprites = [
 ];
 
 // ─────────────────────────────────────────────────────────────
-//  Réseau routier — grille 3×3
+// Réseau routier — grille 3x3
 // ─────────────────────────────────────────────────────────────
 const nodes = [
     { x: 110, y: 114 }, { x: 374, y: 114 }, { x: 659, y: 114 },
@@ -42,9 +42,8 @@ const nodes = [
 ];
 
 const stateColors = { fluide: '#4ade80', ralenti: '#fb923c', bouchon: '#ef4444' };
-const stateLabels = { fluide: 'Fluide', ralenti: 'Ralenti', bouchon: 'Bouchon' };
+const stateLabels  = { fluide: 'Fluide', ralenti: 'Ralenti', bouchon: 'Bouchon' };
 
-// Noms lisibles pour le tooltip (ex: "A1 → A2")
 const roads = [
     { from: nodes[0], to: nodes[1], state: 'fluide',  name: 'Route 1 — N→E (haut)'     },
     { from: nodes[1], to: nodes[2], state: 'ralenti', name: 'Route 2 — N→E (haut)'     },
@@ -74,9 +73,9 @@ const trafficLights = nodes.map(node => ({
 }));
 
 // ─────────────────────────────────────────────────────────────
-//  Contrôle de vitesse — slider + présets
+// Contrôle de vitesse
 // ─────────────────────────────────────────────────────────────
-let running     = false;   // démarré uniquement après chargement des images
+let running = false;
 let animationId = null;
 
 let speedFactor = 1;
@@ -88,22 +87,18 @@ function setSpeed(value) {
     speedFactor = value;
     speedSlider.value = value;
     speedLabel.textContent = '×' + value;
-    // Met à jour l'état actif du préset correspondant
     presetBtns.forEach(btn => {
         btn.classList.toggle('active', parseFloat(btn.dataset.speed) === value);
     });
 }
 
-speedSlider.addEventListener('input', () => {
-    setSpeed(parseFloat(speedSlider.value));
-});
-
+speedSlider.addEventListener('input', () => setSpeed(parseFloat(speedSlider.value)));
 presetBtns.forEach(btn => {
     btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
 });
 
 // ─────────────────────────────────────────────────────────────
-//  Horloge
+// Horloge
 // ─────────────────────────────────────────────────────────────
 let simSeconds = 0;
 let frameAcc   = 0;
@@ -118,7 +113,7 @@ function updateClock() {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Boutons
+// Boutons
 // ─────────────────────────────────────────────────────────────
 const btnStart = document.getElementById('btn-start');
 const btnPause = document.getElementById('btn-pause');
@@ -128,7 +123,7 @@ const btnStop  = document.getElementById('btn-stop');
 function setButtons(state) {
     btnStart.disabled = (state === 'running');
     btnPause.disabled = (state === 'paused' || state === 'stopped');
-    btnReset.disabled = false; // toujours disponible
+    btnReset.disabled = false;
     btnStop.disabled  = (state === 'stopped');
 }
 
@@ -141,14 +136,91 @@ function setStatus(text, color, paused = false) {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  TOOLTIP — distance point → segment
+// Écran d'arrêt — dessiné sur le canvas quand stopped
+// ─────────────────────────────────────────────────────────────
+function drawStopScreen() {
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Fond sombre dégradé
+    const grad = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * 0.75);
+    grad.addColorStop(0, '#1a2744');
+    grad.addColorStop(1, '#0a0f1e');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Grille de routes fantômes (dessin discret du réseau sans véhicules)
+    ctx.globalAlpha = 0.06;
+    roads.forEach(road => {
+        ctx.beginPath();
+        ctx.moveTo(road.from.x, road.from.y);
+        ctx.lineTo(road.to.x, road.to.y);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 28;
+        ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+
+    // Icône centrale — cercle avec triangle play
+    const cx = W / 2;
+    const cy = H / 2 - 30;
+    const r  = 42;
+
+    // Cercle extérieur (halo)
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 14, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(233, 69, 96, 0.10)';
+    ctx.fill();
+
+    // Cercle principal
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(233, 69, 96, 0.18)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(233, 69, 96, 0.70)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Triangle play centré dans le cercle
+    const px = cx - 10, py = cy;
+    const ps = 20; // demi-hauteur du triangle
+    ctx.beginPath();
+    ctx.moveTo(px + ps * 0.8, py);
+    ctx.lineTo(px - ps * 0.4, py - ps);
+    ctx.lineTo(px - ps * 0.4, py + ps);
+    ctx.closePath();
+    ctx.fillStyle = '#e94560';
+    ctx.fill();
+
+    // Titre principal
+    ctx.fillStyle = '#f1f5f9';
+    ctx.font = '700 22px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Simulation arrêtée', cx, cy + r + 34);
+
+    // Sous-titre / CTA
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '400 14px Inter, sans-serif';
+    ctx.fillText('Cliquez sur  Démarrer  pour lancer une nouvelle simulation', cx, cy + r + 62);
+
+    // Raccourci clavier hint
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.50)';
+    ctx.font = '400 12px Inter, sans-serif';
+    ctx.fillText('ou appuyez sur  Espace', cx, cy + r + 86);
+
+    ctx.textAlign   = 'left';
+    ctx.textBaseline = 'alphabetic';
+}
+
+// ─────────────────────────────────────────────────────────────
+// TOOLTIP
 // ─────────────────────────────────────────────────────────────
 const tooltip    = document.getElementById('route-tooltip');
 const ttTitle    = document.getElementById('tt-title');
 const ttDot      = document.getElementById('tt-dot');
 const ttStateText = document.getElementById('tt-state-text');
 
-// Calcule la distance minimale entre un point P et le segment AB
 function distPointToSegment(px, py, ax, ay, bx, by) {
     const dx = bx - ax, dy = by - ay;
     const lenSq = dx * dx + dy * dy;
@@ -158,69 +230,45 @@ function distPointToSegment(px, py, ax, ay, bx, by) {
     return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
-// Convertit les coordonnées écran → coordonnées canvas internes
 function screenToCanvas(screenX, screenY) {
-    const rect = canvas.getBoundingClientRect();
-    const canvasAspect  = canvas.width  / canvas.height;
-    const displayAspect = rect.width    / rect.height;
-
+    const rect         = canvas.getBoundingClientRect();
+    const canvasAspect = canvas.width / canvas.height;
+    const displayAspect = rect.width / rect.height;
     let scale, offsetX = 0, offsetY = 0;
-
     if (displayAspect > canvasAspect) {
-        // Container plus large → scale par la largeur, haut/bas rognés
         scale   = rect.width / canvas.width;
         offsetY = (canvas.height - rect.height / scale) / 2;
     } else {
-        // Container plus haut → scale par la hauteur, gauche/droite rognés
         scale   = rect.height / canvas.height;
         offsetX = (canvas.width - rect.width / scale) / 2;
     }
-
-    return {
-        x: (screenX - rect.left) / scale + offsetX,
-        y: (screenY - rect.top)  / scale + offsetY,
-    };
+    return { x: (screenX - rect.left) / scale + offsetX, y: (screenY - rect.top) / scale + offsetY };
 }
 
 canvas.addEventListener('mousemove', (e) => {
-    const { x, y } = screenToCanvas(e.clientX, e.clientY);
+    // Pas de tooltip quand arrêté
+    if (!running && animationId === null) { tooltip.style.display = 'none'; return; }
 
-    // Cherche la route la plus proche dans un rayon de 18px (coordonnées canvas)
+    const { x, y } = screenToCanvas(e.clientX, e.clientY);
     const HIT_RADIUS = 18;
-    let closest = null;
-    let closestDist = Infinity;
+    let closest = null, closestDist = Infinity;
 
     roads.forEach(road => {
-        const d = distPointToSegment(
-            x, y,
-            road.from.x, road.from.y,
-            road.to.x,   road.to.y
-        );
-        if (d < HIT_RADIUS && d < closestDist) {
-            closestDist = d;
-            closest = road;
-        }
+        const d = distPointToSegment(x, y, road.from.x, road.from.y, road.to.x, road.to.y);
+        if (d < HIT_RADIUS && d < closestDist) { closestDist = d; closest = road; }
     });
 
     if (closest) {
-        // Contenu
         ttTitle.textContent     = closest.name;
         ttDot.style.background  = stateColors[closest.state];
         ttStateText.textContent = stateLabels[closest.state];
 
-        // Position — suit la souris avec un petit décalage
-        const rect = canvas.getBoundingClientRect();
-        const canvasZone = document.getElementById('canvas-zone');
-        const zoneRect = canvasZone.getBoundingClientRect();
-
+        const zoneRect = document.getElementById('canvas-zone').getBoundingClientRect();
         let left = e.clientX - zoneRect.left + 14;
         let top  = e.clientY - zoneRect.top  - 10;
-
-        // Empêche le tooltip de déborder à droite
         tooltip.style.display = 'block';
         const ttW = tooltip.offsetWidth;
         if (left + ttW > zoneRect.width - 10) left = e.clientX - zoneRect.left - ttW - 14;
-
         tooltip.style.left = left + 'px';
         tooltip.style.top  = top  + 'px';
     } else {
@@ -228,26 +276,22 @@ canvas.addEventListener('mousemove', (e) => {
     }
 });
 
-canvas.addEventListener('mouseleave', () => {
-    tooltip.style.display = 'none';
-});
+canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
 // ─────────────────────────────────────────────────────────────
-//  DONUT — dessin sur #donut-canvas
+// DONUT
 // ─────────────────────────────────────────────────────────────
 const donutCanvas = document.getElementById('donut-canvas');
 const dCtx        = donutCanvas.getContext('2d');
 
 function drawDonut(counts, total) {
-    const W = donutCanvas.width;
-    const H = donutCanvas.height;
+    const W = donutCanvas.width, H = donutCanvas.height;
     const cx = W / 2, cy = H / 2;
     const outerR = 40, innerR = 24;
 
     dCtx.clearRect(0, 0, W, H);
 
     if (total === 0) {
-        // Cercle gris si pas encore de données
         dCtx.beginPath();
         dCtx.arc(cx, cy, outerR, 0, Math.PI * 2);
         dCtx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
@@ -262,38 +306,33 @@ function drawDonut(counts, total) {
         { count: counts.bouchon, color: '#ef4444' },
     ];
 
-    let startAngle = -Math.PI / 2; // commence en haut
-
+    let startAngle = -Math.PI / 2;
     slices.forEach(slice => {
         if (slice.count === 0) return;
         const angle = (slice.count / total) * Math.PI * 2;
-
         dCtx.beginPath();
         dCtx.moveTo(cx, cy);
         dCtx.arc(cx, cy, outerR, startAngle, startAngle + angle);
         dCtx.closePath();
         dCtx.fillStyle = slice.color;
         dCtx.fill();
-
         startAngle += angle;
     });
 
-    // Trou central (anneau)
     dCtx.beginPath();
     dCtx.arc(cx, cy, innerR, 0, Math.PI * 2);
-    dCtx.fillStyle = '#0f3460'; // même couleur que .section
+    dCtx.fillStyle = '#0f3460';
     dCtx.fill();
 
-    // Nombre total au centre
-    dCtx.fillStyle = '#e2e8f0';
-    dCtx.font = '700 14px Inter, sans-serif';
-    dCtx.textAlign = 'center';
+    dCtx.fillStyle    = '#e2e8f0';
+    dCtx.font         = '700 14px Inter, sans-serif';
+    dCtx.textAlign    = 'center';
     dCtx.textBaseline = 'middle';
     dCtx.fillText(total, cx, cy);
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Dessin canvas principal
+// Dessin canvas principal
 // ─────────────────────────────────────────────────────────────
 function drawBackground() {
     if (bgImg.complete) {
@@ -309,11 +348,11 @@ function drawRoadStates() {
         ctx.beginPath();
         ctx.moveTo(road.from.x, road.from.y);
         ctx.lineTo(road.to.x, road.to.y);
-        ctx.strokeStyle = stateColors[road.state];
-        ctx.lineWidth = 5;
-        ctx.globalAlpha = 0.80;
+        ctx.strokeStyle  = stateColors[road.state];
+        ctx.lineWidth    = 5;
+        ctx.globalAlpha  = 0.80;
         ctx.stroke();
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha  = 1;
     });
 }
 
@@ -321,18 +360,18 @@ function drawRoundabouts() {
     nodes.forEach(node => {
         ctx.beginPath();
         ctx.arc(node.x, node.y, 24, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(70, 70, 70, 0.30)';
+        ctx.fillStyle   = 'rgba(70, 70, 70, 0.30)';
         ctx.fill();
         ctx.strokeStyle = 'rgba(40, 40, 40, 0.50)';
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth   = 2.5;
         ctx.stroke();
 
         ctx.beginPath();
         ctx.arc(node.x, node.y, 11, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(55, 130, 55, 0.65)';
+        ctx.fillStyle   = 'rgba(55, 130, 55, 0.65)';
         ctx.fill();
         ctx.strokeStyle = 'rgba(30, 90, 30, 0.60)';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth   = 1.5;
         ctx.stroke();
     });
 }
@@ -340,18 +379,12 @@ function drawRoundabouts() {
 function drawTrafficLights() {
     trafficLights.forEach(tl => {
         const img = tl.state === 'green' ? tlGreenImg : tlRedImg;
-        if (img.complete) {
-            ctx.drawImage(img, tl.node.x + 18, tl.node.y - 46, 28, 52);
-        }
+        if (img.complete) ctx.drawImage(img, tl.node.x + 18, tl.node.y - 46, 28, 52);
 
-        const cx = tl.node.x + 52;
-        const cy = tl.node.y - 32;
-
+        const cx = tl.node.x + 52, cy = tl.node.y - 32;
         ctx.beginPath();
         ctx.arc(cx, cy, 11, 0, Math.PI * 2);
-        ctx.fillStyle = tl.state === 'green'
-            ? 'rgba(74, 222, 128, 0.25)'
-            : 'rgba(239, 68, 68, 0.25)';
+        ctx.fillStyle = tl.state === 'green' ? 'rgba(74,222,128,0.25)' : 'rgba(239,68,68,0.25)';
         ctx.fill();
 
         ctx.beginPath();
@@ -366,25 +399,24 @@ function drawVehicles() {
     vehicles.forEach(v => {
         const rawX = v.road.from.x + (v.road.to.x - v.road.from.x) * v.progress;
         const rawY = v.road.from.y + (v.road.to.y - v.road.from.y) * v.progress;
-        const dx = v.road.to.x - v.road.from.x;
-        const dy = v.road.to.y - v.road.from.y;
-        const len = Math.sqrt(dx * dx + dy * dy);
+        const dx   = v.road.to.x - v.road.from.x;
+        const dy   = v.road.to.y - v.road.from.y;
+        const len  = Math.sqrt(dx * dx + dy * dy);
 
         const perpX = (-dy / len) * laneOffset;
-        const perpY = (dx / len) * laneOffset;
-        const isHorizontal = Math.abs(dx) > Math.abs(dy);
+        const perpY = ( dx / len) * laneOffset;
+        const isHorizontal   = Math.abs(dx) > Math.abs(dy);
         const vertCorrection = isHorizontal ? -14 : 0;
 
-        const x = rawX + perpX;
-        const y = rawY + perpY + vertCorrection;
+        const x     = rawX + perpX;
+        const y     = rawY + perpY + vertCorrection;
         const angle = Math.atan2(dy, dx) + Math.PI / 2;
 
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(angle);
         if (carsImg.complete) {
-            ctx.drawImage(
-                carsImg,
+            ctx.drawImage(carsImg,
                 v.sprite.sx, v.sprite.sy, v.sprite.sw, v.sprite.sh,
                 -11, -19, 22, 38
             );
@@ -394,15 +426,12 @@ function drawVehicles() {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Mises à jour logiques
+// Mises à jour logiques
 // ─────────────────────────────────────────────────────────────
 function updateTrafficLights() {
     trafficLights.forEach(tl => {
         tl.timer += speedFactor;
-        if (tl.timer > 300) {
-            tl.state = tl.state === 'green' ? 'red' : 'green';
-            tl.timer = 0;
-        }
+        if (tl.timer > 300) { tl.state = tl.state === 'green' ? 'red' : 'green'; tl.timer = 0; }
     });
 }
 
@@ -423,14 +452,13 @@ function updateDashboard() {
     document.getElementById('count-ralenti').textContent = counts.ralenti;
     document.getElementById('count-bouchon').textContent = counts.bouchon;
 
-    // Barres + valeurs flottantes
     const bars = [
         { bar: 'bar-fluide',  tip: 'tip-fluide',  count: counts.fluide  },
-        { bar: 'bar-ralenti', tip: 'tip-ralenti',  count: counts.ralenti },
-        { bar: 'bar-bouchon', tip: 'tip-bouchon',  count: counts.bouchon },
+        { bar: 'bar-ralenti', tip: 'tip-ralenti', count: counts.ralenti },
+        { bar: 'bar-bouchon', tip: 'tip-bouchon', count: counts.bouchon },
     ];
     bars.forEach(({ bar, tip, count }) => {
-        const pct = total > 0 ? count / total * 100 : 0;
+        const pct   = total > 0 ? count / total * 100 : 0;
         const barEl = document.getElementById(bar);
         const tipEl = document.getElementById(tip);
         barEl.style.width = pct + '%';
@@ -438,17 +466,15 @@ function updateDashboard() {
         barEl.classList.toggle('has-data', count > 0);
     });
 
-    // Pourcentages donut
     document.getElementById('pct-fluide').textContent  = Math.round(counts.fluide  / total * 100) + '%';
     document.getElementById('pct-ralenti').textContent = Math.round(counts.ralenti / total * 100) + '%';
     document.getElementById('pct-bouchon').textContent = Math.round(counts.bouchon / total * 100) + '%';
 
-    // Redessine le donut
     drawDonut(counts, total);
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Boucle principale
+// Boucle principale
 // ─────────────────────────────────────────────────────────────
 function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -465,36 +491,24 @@ function loop() {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Keyboard shortcuts
+// Keyboard shortcuts
 // ─────────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
-    // Ignore si focus sur un input
     if (e.target.tagName === 'INPUT') return;
-
     switch (e.key) {
-        case ' ': // Espace : pause/play
+        case ' ':
             e.preventDefault();
-            if (running) btnPause.click();
-            else         btnStart.click();
+            if (running) btnPause.click(); else btnStart.click();
             break;
-        case 'r': case 'R': // R = reset
-            btnReset.click();
-            break;
-        case 's': case 'S': // S = stop
-            btnStop.click();
-            break;
-        case '+': case '=': // + =  vitesse +0.5
-            setSpeed(Math.min(5, speedFactor + 0.5));
-            break;
-        case '-': // - = vitesse -0.5
-            setSpeed(Math.max(1, speedFactor - 0.5));
-            break;
+        case 'r': case 'R': btnReset.click(); break;
+        case 's': case 'S': btnStop.click();  break;
+        case '+': case '=': setSpeed(Math.min(5, speedFactor + 0.5)); break;
+        case '-':            setSpeed(Math.max(1, speedFactor - 0.5)); break;
     }
 });
 
-
 // ─────────────────────────────────────────────────────────────
-//  Événements boutons
+// Événements boutons
 // ─────────────────────────────────────────────────────────────
 btnStart.addEventListener('click', () => {
     if (!running) {
@@ -508,6 +522,7 @@ btnStart.addEventListener('click', () => {
 btnPause.addEventListener('click', () => {
     running = false;
     cancelAnimationFrame(animationId);
+    animationId = null;
     setStatus('en pause', '#fb923c', true);
     setButtons('paused');
 });
@@ -525,38 +540,38 @@ btnReset.addEventListener('click', () => {
 btnStop.addEventListener('click', () => {
     running = false;
     cancelAnimationFrame(animationId);
-    // Remet tout à zéro
+    animationId = null;
+
     vehicles.forEach(v => { v.progress = 0; });
     simSeconds = 0;
     frameAcc   = 0;
     document.getElementById('clock').textContent = '00:00';
-    // Efface le canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dessine l'écran d'arrêt stylé au lieu du noir vide
+    drawStopScreen();
+
     setStatus('arrêté', '#ef4444', true);
     setButtons('stopped');
 });
 
-// ── Toggle thème ──
+// Toggle thème
 document.getElementById('btn-theme').addEventListener('click', () => {
     const isLight = document.body.classList.toggle('light');
     document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';
 });
 
 // ─────────────────────────────────────────────────────────────
-//  Lancement
+// Lancement
 // ─────────────────────────────────────────────────────────────
 let imagesLoaded = 0;
 const totalImages = 4;
-const loadStart = Date.now();
+const loadStart   = Date.now();
 
 [bgImg, carsImg, tlRedImg, tlGreenImg].forEach(img => {
     img.onload = () => {
         imagesLoaded++;
         if (imagesLoaded === totalImages) {
-            const elapsed   = Date.now() - loadStart;
-            const minDelay  = 3000;
-            const remaining = Math.max(0, minDelay - elapsed);
-
+            const remaining = Math.max(0, 3000 - (Date.now() - loadStart));
             setTimeout(() => {
                 const overlay = document.getElementById('loading-overlay');
                 overlay.classList.add('hidden');
