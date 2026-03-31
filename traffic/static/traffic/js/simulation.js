@@ -74,14 +74,32 @@ const trafficLights = nodes.map(node => ({
 }));
 
 // ─────────────────────────────────────────────────────────────
-//  Contrôle de vitesse
+//  Contrôle de vitesse — slider + présets
 // ─────────────────────────────────────────────────────────────
+let running     = false;   // démarré uniquement après chargement des images
+let animationId = null;
+
 let speedFactor = 1;
 const speedSlider = document.getElementById('speed-slider');
 const speedLabel  = document.getElementById('speed-label');
+const presetBtns  = document.querySelectorAll('.speed-preset');
+
+function setSpeed(value) {
+    speedFactor = value;
+    speedSlider.value = value;
+    speedLabel.textContent = '×' + value;
+    // Met à jour l'état actif du préset correspondant
+    presetBtns.forEach(btn => {
+        btn.classList.toggle('active', parseFloat(btn.dataset.speed) === value);
+    });
+}
+
 speedSlider.addEventListener('input', () => {
-    speedFactor = parseFloat(speedSlider.value);
-    speedLabel.textContent = '×' + speedFactor;
+    setSpeed(parseFloat(speedSlider.value));
+});
+
+presetBtns.forEach(btn => {
+    btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -105,11 +123,12 @@ function updateClock() {
 const btnStart = document.getElementById('btn-start');
 const btnPause = document.getElementById('btn-pause');
 const btnReset = document.getElementById('btn-reset');
-const btnStop = document.getElementById('btn-stop');
+const btnStop  = document.getElementById('btn-stop');
 
 function setButtons(state) {
     btnStart.disabled = (state === 'running');
     btnPause.disabled = (state === 'paused' || state === 'stopped');
+    btnReset.disabled = false; // toujours disponible
     btnStop.disabled  = (state === 'stopped');
 }
 
@@ -404,9 +423,20 @@ function updateDashboard() {
     document.getElementById('count-ralenti').textContent = counts.ralenti;
     document.getElementById('count-bouchon').textContent = counts.bouchon;
 
-    document.getElementById('bar-fluide').style.width  = (counts.fluide  / total * 100) + '%';
-    document.getElementById('bar-ralenti').style.width = (counts.ralenti / total * 100) + '%';
-    document.getElementById('bar-bouchon').style.width = (counts.bouchon / total * 100) + '%';
+    // Barres + valeurs flottantes
+    const bars = [
+        { bar: 'bar-fluide',  tip: 'tip-fluide',  count: counts.fluide  },
+        { bar: 'bar-ralenti', tip: 'tip-ralenti',  count: counts.ralenti },
+        { bar: 'bar-bouchon', tip: 'tip-bouchon',  count: counts.bouchon },
+    ];
+    bars.forEach(({ bar, tip, count }) => {
+        const pct = total > 0 ? count / total * 100 : 0;
+        const barEl = document.getElementById(bar);
+        const tipEl = document.getElementById(tip);
+        barEl.style.width = pct + '%';
+        tipEl.textContent = Math.round(pct) + '%';
+        barEl.classList.toggle('has-data', count > 0);
+    });
 
     // Pourcentages donut
     document.getElementById('pct-fluide').textContent  = Math.round(counts.fluide  / total * 100) + '%';
@@ -420,9 +450,6 @@ function updateDashboard() {
 // ─────────────────────────────────────────────────────────────
 //  Boucle principale
 // ─────────────────────────────────────────────────────────────
-let running = true;
-let animationId;
-
 function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
@@ -457,14 +484,10 @@ document.addEventListener('keydown', (e) => {
             btnStop.click();
             break;
         case '+': case '=': // + =  vitesse +0.5
-            speedFactor = Math.min(5, speedFactor + 0.5);
-            speedSlider.value = speedFactor;
-            speedLabel.textContent = '×' + speedFactor;
+            setSpeed(Math.min(5, speedFactor + 0.5));
             break;
         case '-': // - = vitesse -0.5
-            speedFactor = Math.max(1, speedFactor - 0.5);
-            speedSlider.value = speedFactor;
-            speedLabel.textContent = '×' + speedFactor;
+            setSpeed(Math.max(1, speedFactor - 0.5));
             break;
     }
 });
@@ -511,6 +534,12 @@ btnStop.addEventListener('click', () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setStatus('arrêté', '#ef4444', true);
     setButtons('stopped');
+});
+
+// ── Toggle thème ──
+document.getElementById('btn-theme').addEventListener('click', () => {
+    const isLight = document.body.classList.toggle('light');
+    document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';
 });
 
 // ─────────────────────────────────────────────────────────────
