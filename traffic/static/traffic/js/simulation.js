@@ -45,18 +45,18 @@ const stateColors = { fluide: '#4ade80', ralenti: '#fb923c', bouchon: '#ef4444' 
 const stateLabels  = { fluide: 'Fluide', ralenti: 'Ralenti', bouchon: 'Bouchon' };
 
 const roads = [
-    { from: nodes[0], to: nodes[1], state: 'fluide',  name: 'Route 1 — N→E (haut)'     },
-    { from: nodes[1], to: nodes[2], state: 'ralenti', name: 'Route 2 — N→E (haut)'     },
-    { from: nodes[3], to: nodes[4], state: 'fluide',  name: 'Route 3 — N→E (milieu)'   },
-    { from: nodes[4], to: nodes[5], state: 'bouchon', name: 'Route 4 — N→E (milieu)'   },
-    { from: nodes[6], to: nodes[7], state: 'ralenti', name: 'Route 5 — N→E (bas)'      },
-    { from: nodes[7], to: nodes[8], state: 'fluide',  name: 'Route 6 — N→E (bas)'      },
-    { from: nodes[0], to: nodes[3], state: 'fluide',  name: 'Route 7 — N→S (gauche)'   },
-    { from: nodes[1], to: nodes[4], state: 'bouchon', name: 'Route 8 — N→S (centre)'   },
-    { from: nodes[2], to: nodes[5], state: 'fluide',  name: 'Route 9 — N→S (droite)'   },
-    { from: nodes[3], to: nodes[6], state: 'ralenti', name: 'Route 10 — N→S (gauche)'  },
-    { from: nodes[4], to: nodes[7], state: 'fluide',  name: 'Route 11 — N→S (centre)'  },
-    { from: nodes[5], to: nodes[8], state: 'ralenti', name: 'Route 12 — N→S (droite)'  },
+    { from: nodes[0], to: nodes[1], state: 'fluide',  name: 'Route 1 — N→E (haut)'    },
+    { from: nodes[1], to: nodes[2], state: 'ralenti', name: 'Route 2 — N→E (haut)'    },
+    { from: nodes[3], to: nodes[4], state: 'fluide',  name: 'Route 3 — N→E (milieu)'  },
+    { from: nodes[4], to: nodes[5], state: 'bouchon', name: 'Route 4 — N→E (milieu)'  },
+    { from: nodes[6], to: nodes[7], state: 'ralenti', name: 'Route 5 — N→E (bas)'     },
+    { from: nodes[7], to: nodes[8], state: 'fluide',  name: 'Route 6 — N→E (bas)'     },
+    { from: nodes[0], to: nodes[3], state: 'fluide',  name: 'Route 7 — N→S (gauche)'  },
+    { from: nodes[1], to: nodes[4], state: 'bouchon', name: 'Route 8 — N→S (centre)'  },
+    { from: nodes[2], to: nodes[5], state: 'fluide',  name: 'Route 9 — N→S (droite)'  },
+    { from: nodes[3], to: nodes[6], state: 'ralenti', name: 'Route 10 — N→S (gauche)' },
+    { from: nodes[4], to: nodes[7], state: 'fluide',  name: 'Route 11 — N→S (centre)' },
+    { from: nodes[5], to: nodes[8], state: 'ralenti', name: 'Route 12 — N→S (droite)' },
 ];
 
 const vehicles = roads.map(road => ({
@@ -71,6 +71,57 @@ const trafficLights = nodes.map(node => ({
     state: Math.random() > 0.5 ? 'green' : 'red',
     timer: Math.floor(Math.random() * 200),
 }));
+
+// ─────────────────────────────────────────────────────────────
+// Toast — système de notifications overlay canvas
+//
+// Principe : un unique conteneur DOM (#toast-container) positionné
+// en absolute dans #canvas-zone. showToast() y injecte le contenu
+// et gère les classes CSS qui pilotent l'animation via transitions.
+//
+// On utilise un seul élément réutilisé plutôt qu'un empilement de
+// noeuds créés/détruits, ce qui évite les problèmes de z-index et
+// les fuites mémoire liées à des setTimeout orphelins.
+// ─────────────────────────────────────────────────────────────
+const toastContainer = document.getElementById('toast-container');
+let toastTimerId = null;
+
+function showToast(message, type = 'info', duration = 2500) {
+    // Annule le timer précédent pour éviter un double-dismiss
+    if (toastTimerId !== null) {
+        clearTimeout(toastTimerId);
+        toastTimerId = null;
+    }
+
+    const icons = { info: '●', success: '✓', warning: '⏸', danger: '⏹' };
+
+    toastContainer.innerHTML  = '';
+    toastContainer.className  = 'toast-visible toast--' + type;
+
+    const icon = document.createElement('span');
+    icon.className   = 'toast-icon';
+    icon.textContent = icons[type] || '●';
+
+    const text = document.createElement('span');
+    text.className   = 'toast-text';
+    text.textContent = message;
+
+    toastContainer.appendChild(icon);
+    toastContainer.appendChild(text);
+
+    // Phase 1 : visible pendant `duration` ms
+    // Phase 2 : transition de sortie (300ms via CSS)
+    // Phase 3 : nettoyage complet
+    toastTimerId = setTimeout(() => {
+        toastContainer.classList.remove('toast-visible');
+        toastContainer.classList.add('toast-hiding');
+        setTimeout(() => {
+            toastContainer.className  = '';
+            toastContainer.innerHTML  = '';
+            toastTimerId = null;
+        }, 300);
+    }, duration);
+}
 
 // ─────────────────────────────────────────────────────────────
 // Contrôle de vitesse
@@ -136,89 +187,74 @@ function setStatus(text, color, paused = false) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Écran d'arrêt — dessiné sur le canvas quand stopped
+// Écran d'arrêt
 // ─────────────────────────────────────────────────────────────
 function drawStopScreen() {
-    const W = canvas.width;
-    const H = canvas.height;
-
-    // Fond sombre dégradé
+    const W = canvas.width, H = canvas.height;
     const grad = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * 0.75);
     grad.addColorStop(0, '#1a2744');
     grad.addColorStop(1, '#0a0f1e');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    // Grille de routes fantômes (dessin discret du réseau sans véhicules)
     ctx.globalAlpha = 0.06;
     roads.forEach(road => {
         ctx.beginPath();
         ctx.moveTo(road.from.x, road.from.y);
         ctx.lineTo(road.to.x, road.to.y);
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 28;
+        ctx.lineWidth   = 28;
         ctx.stroke();
     });
     ctx.globalAlpha = 1;
 
-    // Icône centrale — cercle avec triangle play
-    const cx = W / 2;
-    const cy = H / 2 - 30;
-    const r  = 42;
-
-    // Cercle extérieur (halo)
+    const cx = W / 2, cy = H / 2 - 30, r = 42;
     ctx.beginPath();
     ctx.arc(cx, cy, r + 14, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(233, 69, 96, 0.10)';
     ctx.fill();
 
-    // Cercle principal
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(233, 69, 96, 0.18)';
+    ctx.fillStyle   = 'rgba(233, 69, 96, 0.18)';
     ctx.fill();
     ctx.strokeStyle = 'rgba(233, 69, 96, 0.70)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth   = 2;
     ctx.stroke();
 
-    // Triangle play centré dans le cercle
-    const px = cx - 10, py = cy;
-    const ps = 20; // demi-hauteur du triangle
+    const ps = 20;
     ctx.beginPath();
-    ctx.moveTo(px + ps * 0.8, py);
-    ctx.lineTo(px - ps * 0.4, py - ps);
-    ctx.lineTo(px - ps * 0.4, py + ps);
+    ctx.moveTo(cx - 10 + ps * 0.8, cy);
+    ctx.lineTo(cx - 10 - ps * 0.4, cy - ps);
+    ctx.lineTo(cx - 10 - ps * 0.4, cy + ps);
     ctx.closePath();
     ctx.fillStyle = '#e94560';
     ctx.fill();
 
-    // Titre principal
-    ctx.fillStyle = '#f1f5f9';
-    ctx.font = '700 22px Inter, sans-serif';
-    ctx.textAlign = 'center';
+    ctx.fillStyle    = '#f1f5f9';
+    ctx.font         = '700 22px Inter, sans-serif';
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('Simulation arrêtée', cx, cy + r + 34);
 
-    // Sous-titre / CTA
     ctx.fillStyle = '#94a3b8';
-    ctx.font = '400 14px Inter, sans-serif';
+    ctx.font      = '400 14px Inter, sans-serif';
     ctx.fillText('Cliquez sur  Démarrer  pour lancer une nouvelle simulation', cx, cy + r + 62);
 
-    // Raccourci clavier hint
     ctx.fillStyle = 'rgba(148, 163, 184, 0.50)';
-    ctx.font = '400 12px Inter, sans-serif';
+    ctx.font      = '400 12px Inter, sans-serif';
     ctx.fillText('ou appuyez sur  Espace', cx, cy + r + 86);
 
-    ctx.textAlign   = 'left';
+    ctx.textAlign    = 'left';
     ctx.textBaseline = 'alphabetic';
 }
 
 // ─────────────────────────────────────────────────────────────
 // TOOLTIP
 // ─────────────────────────────────────────────────────────────
-const tooltip    = document.getElementById('route-tooltip');
-const ttTitle    = document.getElementById('tt-title');
-const ttDot      = document.getElementById('tt-dot');
+const tooltip     = document.getElementById('route-tooltip');
+const ttTitle     = document.getElementById('tt-title');
+const ttDot       = document.getElementById('tt-dot');
 const ttStateText = document.getElementById('tt-state-text');
 
 function distPointToSegment(px, py, ax, ay, bx, by) {
@@ -231,8 +267,8 @@ function distPointToSegment(px, py, ax, ay, bx, by) {
 }
 
 function screenToCanvas(screenX, screenY) {
-    const rect         = canvas.getBoundingClientRect();
-    const canvasAspect = canvas.width / canvas.height;
+    const rect          = canvas.getBoundingClientRect();
+    const canvasAspect  = canvas.width / canvas.height;
     const displayAspect = rect.width / rect.height;
     let scale, offsetX = 0, offsetY = 0;
     if (displayAspect > canvasAspect) {
@@ -246,36 +282,30 @@ function screenToCanvas(screenX, screenY) {
 }
 
 canvas.addEventListener('mousemove', (e) => {
-    // Pas de tooltip quand arrêté
     if (!running && animationId === null) { tooltip.style.display = 'none'; return; }
-
     const { x, y } = screenToCanvas(e.clientX, e.clientY);
     const HIT_RADIUS = 18;
     let closest = null, closestDist = Infinity;
-
     roads.forEach(road => {
         const d = distPointToSegment(x, y, road.from.x, road.from.y, road.to.x, road.to.y);
         if (d < HIT_RADIUS && d < closestDist) { closestDist = d; closest = road; }
     });
-
     if (closest) {
         ttTitle.textContent     = closest.name;
         ttDot.style.background  = stateColors[closest.state];
         ttStateText.textContent = stateLabels[closest.state];
-
         const zoneRect = document.getElementById('canvas-zone').getBoundingClientRect();
         let left = e.clientX - zoneRect.left + 14;
         let top  = e.clientY - zoneRect.top  - 10;
         tooltip.style.display = 'block';
-        const ttW = tooltip.offsetWidth;
-        if (left + ttW > zoneRect.width - 10) left = e.clientX - zoneRect.left - ttW - 14;
+        if (left + tooltip.offsetWidth > zoneRect.width - 10)
+            left = e.clientX - zoneRect.left - tooltip.offsetWidth - 14;
         tooltip.style.left = left + 'px';
         tooltip.style.top  = top  + 'px';
     } else {
         tooltip.style.display = 'none';
     }
 });
-
 canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
 // ─────────────────────────────────────────────────────────────
@@ -288,9 +318,7 @@ function drawDonut(counts, total) {
     const W = donutCanvas.width, H = donutCanvas.height;
     const cx = W / 2, cy = H / 2;
     const outerR = 40, innerR = 24;
-
     dCtx.clearRect(0, 0, W, H);
-
     if (total === 0) {
         dCtx.beginPath();
         dCtx.arc(cx, cy, outerR, 0, Math.PI * 2);
@@ -299,13 +327,11 @@ function drawDonut(counts, total) {
         dCtx.fill();
         return;
     }
-
     const slices = [
         { count: counts.fluide,  color: '#4ade80' },
         { count: counts.ralenti, color: '#fb923c' },
         { count: counts.bouchon, color: '#ef4444' },
     ];
-
     let startAngle = -Math.PI / 2;
     slices.forEach(slice => {
         if (slice.count === 0) return;
@@ -318,12 +344,10 @@ function drawDonut(counts, total) {
         dCtx.fill();
         startAngle += angle;
     });
-
     dCtx.beginPath();
     dCtx.arc(cx, cy, innerR, 0, Math.PI * 2);
     dCtx.fillStyle = '#0f3460';
     dCtx.fill();
-
     dCtx.fillStyle    = '#e2e8f0';
     dCtx.font         = '700 14px Inter, sans-serif';
     dCtx.textAlign    = 'center';
@@ -348,11 +372,11 @@ function drawRoadStates() {
         ctx.beginPath();
         ctx.moveTo(road.from.x, road.from.y);
         ctx.lineTo(road.to.x, road.to.y);
-        ctx.strokeStyle  = stateColors[road.state];
-        ctx.lineWidth    = 5;
-        ctx.globalAlpha  = 0.80;
+        ctx.strokeStyle = stateColors[road.state];
+        ctx.lineWidth   = 5;
+        ctx.globalAlpha = 0.80;
         ctx.stroke();
-        ctx.globalAlpha  = 1;
+        ctx.globalAlpha = 1;
     });
 }
 
@@ -380,13 +404,11 @@ function drawTrafficLights() {
     trafficLights.forEach(tl => {
         const img = tl.state === 'green' ? tlGreenImg : tlRedImg;
         if (img.complete) ctx.drawImage(img, tl.node.x + 18, tl.node.y - 46, 28, 52);
-
         const cx = tl.node.x + 52, cy = tl.node.y - 32;
         ctx.beginPath();
         ctx.arc(cx, cy, 11, 0, Math.PI * 2);
         ctx.fillStyle = tl.state === 'green' ? 'rgba(74,222,128,0.25)' : 'rgba(239,68,68,0.25)';
         ctx.fill();
-
         ctx.beginPath();
         ctx.arc(cx, cy, 7, 0, Math.PI * 2);
         ctx.fillStyle = tl.state === 'green' ? '#4ade80' : '#ef4444';
@@ -402,16 +424,13 @@ function drawVehicles() {
         const dx   = v.road.to.x - v.road.from.x;
         const dy   = v.road.to.y - v.road.from.y;
         const len  = Math.sqrt(dx * dx + dy * dy);
-
         const perpX = (-dy / len) * laneOffset;
         const perpY = ( dx / len) * laneOffset;
         const isHorizontal   = Math.abs(dx) > Math.abs(dy);
         const vertCorrection = isHorizontal ? -14 : 0;
-
         const x     = rawX + perpX;
         const y     = rawY + perpY + vertCorrection;
         const angle = Math.atan2(dy, dx) + Math.PI / 2;
-
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(angle);
@@ -515,6 +534,7 @@ btnStart.addEventListener('click', () => {
         running = true;
         setStatus('en cours...', '#4ade80', false);
         setButtons('running');
+        showToast('Simulation démarrée', 'success');
         loop();
     }
 });
@@ -525,6 +545,7 @@ btnPause.addEventListener('click', () => {
     animationId = null;
     setStatus('en pause', '#fb923c', true);
     setButtons('paused');
+    showToast('Simulation en pause', 'warning');
 });
 
 btnReset.addEventListener('click', () => {
@@ -534,6 +555,7 @@ btnReset.addEventListener('click', () => {
     document.getElementById('clock').textContent = '00:00';
     setStatus('en cours...', '#4ade80', false);
     setButtons('running');
+    showToast('Réinitialisé — ' + vehicles.length + ' véhicules remis à zéro', 'info');
     if (!running) { running = true; loop(); }
 });
 
@@ -541,20 +563,16 @@ btnStop.addEventListener('click', () => {
     running = false;
     cancelAnimationFrame(animationId);
     animationId = null;
-
     vehicles.forEach(v => { v.progress = 0; });
     simSeconds = 0;
     frameAcc   = 0;
     document.getElementById('clock').textContent = '00:00';
-
-    // Dessine l'écran d'arrêt stylé au lieu du noir vide
     drawStopScreen();
-
     setStatus('arrêté', '#ef4444', true);
     setButtons('stopped');
+    showToast('Simulation arrêtée', 'danger', 3000);
 });
 
-// Toggle thème
 document.getElementById('btn-theme').addEventListener('click', () => {
     const isLight = document.body.classList.toggle('light');
     document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';

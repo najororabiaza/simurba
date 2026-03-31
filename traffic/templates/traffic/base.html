@@ -11,33 +11,22 @@
 <style>
 /* ── Tokens de couleur ── */
 :root {
-    /* Arrière-plans */
     --color-bg-app:       #1a1a2e;
     --color-bg-dashboard: #16213e;
     --color-bg-section:   #0f3460;
     --color-bg-deep:      #1a1a2e;
     --color-bg-canvas:    #0d1020;
-
-    /* Bordures */
     --color-border-subtle: #333;
     --color-border-panel:  #334155;
-
-    /* Texte */
     --color-text-primary: #ffffff;
     --color-text-muted:   #aaa;
     --color-text-hint:    #475569;
     --color-text-sub:     #94a3b8;
     --color-text-clock:   #e2e8f0;
-
-    /* Accent / brand */
     --color-accent: #e94560;
-
-    /* États trafic */
     --color-state-fluide:  #4ade80;
     --color-state-ralenti: #fb923c;
     --color-state-bouchon: #ef4444;
-
-    /* Boutons */
     --color-btn-start:    #22c55e;
     --color-btn-start-h:  #16a34a;
     --color-btn-pause:    #fb923c;
@@ -47,20 +36,13 @@
     --color-btn-stop:     #dc2626;
     --color-btn-stop-h:   #b91c1c;
     --color-btn-theme-bg: #0f3460;
-
-    /* Slider */
     --color-slider-track: #334155;
     --color-slider-thumb: #e94560;
-
-    /* Scrollbar */
     --color-scrollbar: #333;
-
-    /* Overlay */
     --color-overlay-bg:     rgba(15, 23, 42, 0.92);
     --color-overlay-border: #334155;
 }
 
-/* ── Reset ── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
@@ -123,41 +105,122 @@ body {
     border-radius: 8px;
     padding: 8px 12px;
     font-size: 12px;
-    font-family: 'Inter', sans-serif;
     white-space: nowrap;
     z-index: 20;
     backdrop-filter: blur(4px);
     box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
-
-#route-tooltip .tt-title {
-    font-weight: 600;
-    font-size: 13px;
-    margin-bottom: 3px;
-}
-
+#route-tooltip .tt-title { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
 #route-tooltip .tt-state { font-size: 11px; color: var(--color-text-sub); }
-
 #route-tooltip .tt-dot {
     display: inline-block;
     width: 8px; height: 8px;
-    border-radius: 50%;
-    margin-right: 5px;
-    vertical-align: middle;
+    border-radius: 50%; margin-right: 5px; vertical-align: middle;
 }
+
+/* ─────────────────────────────────────────
+   Toast — overlay canvas
+   Positionné en bas à gauche du canvas-zone
+   (en haut à gauche le tooltip route serait
+   masqué si on l'avait mis en haut à droite).
+───────────────────────────────────────── */
+#toast-container {
+    /* Caché par défaut — rendu invisible sans display:none
+       pour que les transitions CSS fonctionnent */
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    z-index: 30;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+
+    /* Fond semi-transparent foncé par défaut — surchargé par les variantes */
+    background: rgba(15, 23, 42, 0.90);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+
+    /* État initial : invisible et décalé vers le bas */
+    opacity: 0;
+    pointer-events: none;
+
+    /* Transition commune entrée/sortie */
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* Entrée : visible et à sa position finale */
+#toast-container.toast-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+/* Sortie : repasse à l'état initial — la classe est ajoutée par JS */
+#toast-container.toast-hiding {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+    pointer-events: none;
+}
+
+/* ── Icône dans le toast ── */
+.toast-icon {
+    font-size: 15px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.toast-text {
+    font-size: 13px;
+    line-height: 1.3;
+}
+
+/* ── Variantes de couleur ── */
+#toast-container.toast--success {
+    background: rgba(20, 83, 45, 0.92);
+    border-color: rgba(74, 222, 128, 0.40);
+    color: #bbf7d0;
+}
+#toast-container.toast--success .toast-icon { color: #4ade80; }
+
+#toast-container.toast--warning {
+    background: rgba(120, 53, 15, 0.92);
+    border-color: rgba(251, 146, 60, 0.40);
+    color: #fed7aa;
+}
+#toast-container.toast--warning .toast-icon { color: #fb923c; }
+
+#toast-container.toast--danger {
+    background: rgba(127, 29, 29, 0.92);
+    border-color: rgba(239, 68, 68, 0.40);
+    color: #fecaca;
+}
+#toast-container.toast--danger .toast-icon { color: #ef4444; }
+
+#toast-container.toast--info {
+    background: rgba(30, 58, 138, 0.92);
+    border-color: rgba(96, 165, 250, 0.40);
+    color: #bfdbfe;
+}
+#toast-container.toast--info .toast-icon { color: #60a5fa; }
 
 /* ── Overlay de chargement ── */
 #loading-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
     background: var(--color-bg-app);
     z-index: 10;
     transition: opacity 0.4s ease;
 }
-
 #loading-overlay img { width: clamp(300px, 50vw, 500px); }
 #loading-overlay.hidden { opacity: 0; pointer-events: none; }
 
@@ -174,7 +237,6 @@ body {
     gap: 14px;
 }
 
-/* ── Tablette ── */
 @media (max-width: 1023px) {
     body { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; }
     #canvas-zone {
@@ -190,7 +252,6 @@ body {
     #dashboard > div:first-child { grid-column: 1 / -1; }
 }
 
-/* ── Mobile ── */
 @media (max-width: 767px) {
     body { flex-direction: column; height: auto; overflow-y: auto; }
     #canvas-zone {
@@ -200,27 +261,22 @@ body {
     #dashboard { display: flex; flex-direction: column; gap: 12px; padding: 12px; width: 100%; }
 }
 
-/* ── Grand écran ── */
 @media (min-width: 1440px) { #dashboard { flex: 0 0 320px; } }
 
 /* ─────────────────────────────────────────
    Composants
 ───────────────────────────────────────── */
 h2 { color: var(--color-accent); font-size: clamp(15px, 2vw, 20px); }
-
 .section { background: var(--color-bg-section); border-radius: 8px; padding: 12px; }
 
 .section-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    display: flex; align-items: center; gap: 6px;
     font-size: 11px; font-weight: 600;
     letter-spacing: 0.08em; color: var(--color-text-muted);
     margin-bottom: 10px; text-transform: uppercase;
 }
 .section-title svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
 
-/* ── Boutons ── */
 button {
     display: block; width: 100%; margin-bottom: 0;
     padding: 9px; border: none; border-radius: 6px;
@@ -242,7 +298,6 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 #btn-stop  { background: var(--color-btn-stop); }
 #btn-stop:hover:not(:disabled)  { background: var(--color-btn-stop-h); }
 
-/* ── Slider ── */
 .slider-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .slider-row label { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
 .slider-row span  { font-size: 12px; color: var(--color-accent); min-width: 28px; text-align: right; }
@@ -262,7 +317,6 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
     background: var(--color-slider-thumb); border: none; cursor: pointer;
 }
 
-/* ── Présets de vitesse ── */
 .speed-presets { display: flex; gap: 5px; margin-top: 7px; }
 .speed-preset {
     flex: 1; padding: 4px 0; font-size: 11px; font-weight: 600;
@@ -276,7 +330,6 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 .speed-preset:hover { background: var(--color-bg-section); color: var(--color-text-primary); }
 .speed-preset.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 
-/* ── Statut ── */
 .status-row {
     display: flex; justify-content: space-between;
     align-items: center; font-size: 13px; margin-bottom: 10px;
@@ -296,7 +349,6 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 }
 .status-dot.paused { background: var(--color-state-ralenti); animation: none; }
 
-/* ── Horloge ── */
 #clock {
     font-size: clamp(18px, 3vw, 24px); font-weight: 700;
     color: var(--color-text-clock); letter-spacing: 0.05em;
@@ -304,7 +356,6 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 }
 .clock-sub { font-size: 11px; color: var(--color-text-hint); text-align: center; }
 
-/* ── Stats trafic ── */
 .stat-item { margin-bottom: 14px; }
 .stat-item:last-child { margin-bottom: 0; }
 .stat-label { font-size: clamp(11px, 1.4vw, 13px); margin-bottom: 6px; }
@@ -314,29 +365,22 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
     height: 9px; border-radius: 5px;
     overflow: visible; position: relative;
 }
-
 .stat-bar {
-    height: 9px; border-radius: 5px;
-    width: 0%; transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 9px; border-radius: 5px; width: 0%;
+    transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative; overflow: visible;
 }
-
 .stat-bar-value {
-    position: absolute;
-    left: calc(100% + 6px); top: 50%;
+    position: absolute; left: calc(100% + 6px); top: 50%;
     transform: translateY(-50%);
-    font-size: 10px; font-weight: 600;
-    color: var(--color-text-muted);
+    font-size: 10px; font-weight: 600; color: var(--color-text-muted);
     white-space: nowrap; opacity: 0;
-    transition: opacity 0.3s ease 0.2s;
-    pointer-events: none;
+    transition: opacity 0.3s ease 0.2s; pointer-events: none;
 }
 .stat-bar.has-data .stat-bar-value { opacity: 1; }
 
-/* ── Donut ── */
 .donut-wrapper { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
 #donut-canvas  { flex-shrink: 0; }
-
 .donut-legend       { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
 .donut-legend-item  { display: flex; align-items: center; gap: 6px; }
 .donut-legend-dot   { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
@@ -344,39 +388,21 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ─────────────────────────────────────────
    Mode clair — palette WCAG AA
-   Ratios de contraste cibles :
-   - texte principal sur fond section : >= 7:1
-   - texte muted sur fond section     : >= 4.5:1
-   - texte hint sur fond section      : >= 3:1 (grands textes)
 ───────────────────────────────────────── */
 body.light {
-    /* Arrière-plans — échelonnés pour créer une hiérarchie visible */
-    --color-bg-app:       #f8fafc; /* blanc cassé — fond racine             */
-    --color-bg-dashboard: #f1f5f9; /* gris très clair — panneau latéral     */
-    --color-bg-section:   #ffffff; /* blanc pur — cartes / sections         */
-    --color-bg-deep:      #e2e8f0; /* gris clair — fond des barres          */
-    --color-bg-canvas:    #dde3ed; /* légèrement plus foncé que le panneau  */
-
-    /* Bordures */
-    --color-border-subtle: #cbd5e1; /* gris moyen, bien visible sur blanc   */
-    --color-border-panel:  #94a3b8; /* plus marqué pour les panneaux        */
-
-    /* Texte — ratios calculés sur fond blanc (#fff) :
-       #1e293b = 13.9:1  (AAA)
-       #374151 =  9.7:1  (AAA)
-       #4b5563 =  6.1:1  (AA)
-       #64748b =  4.6:1  (AA)
-    */
-    --color-text-primary: #1e293b; /* titres et valeurs principales         */
-    --color-text-muted:   #374151; /* labels, libellés                      */
-    --color-text-hint:    #4b5563; /* textes secondaires                    */
-    --color-text-sub:     #64748b; /* métadonnées, raccourcis clavier       */
-    --color-text-clock:   #1e293b; /* horloge                               */
-
-    /* Accent — rouge plus sombre pour maintenir le contraste sur fond clair */
-    --color-accent: #be123c; /* rose-800 — ratio 5.5:1 sur #fff (AA) */
-
-    /* Boutons — couleurs maintenues, texte forcé à blanc par règle dédiée */
+    --color-bg-app:       #f8fafc;
+    --color-bg-dashboard: #f1f5f9;
+    --color-bg-section:   #ffffff;
+    --color-bg-deep:      #e2e8f0;
+    --color-bg-canvas:    #dde3ed;
+    --color-border-subtle: #cbd5e1;
+    --color-border-panel:  #94a3b8;
+    --color-text-primary: #1e293b;
+    --color-text-muted:   #374151;
+    --color-text-hint:    #4b5563;
+    --color-text-sub:     #64748b;
+    --color-text-clock:   #1e293b;
+    --color-accent: #be123c;
     --color-btn-start:    #16a34a;
     --color-btn-start-h:  #15803d;
     --color-btn-pause:    #c2410c;
@@ -386,41 +412,23 @@ body.light {
     --color-btn-stop:     #b91c1c;
     --color-btn-stop-h:   #991b1b;
     --color-btn-theme-bg: #e2e8f0;
-
-    /* Slider */
     --color-slider-track: #94a3b8;
     --color-slider-thumb: #be123c;
-
-    /* Scrollbar */
     --color-scrollbar: #94a3b8;
-
-    /* Overlay tooltip */
     --color-overlay-bg:     rgba(248, 250, 252, 0.95);
     --color-overlay-border: #94a3b8;
 }
 
-/* Les boutons d'action en mode clair gardent un texte blanc lisible */
-body.light button:not(.speed-preset):not(#btn-theme) {
-    color: #ffffff;
-}
-
-/* Le statut "en cours" en mode clair doit rester lisible */
+body.light button:not(.speed-preset):not(#btn-theme) { color: #ffffff; }
 body.light #status { color: #15803d !important; }
+body.light .section { box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05); }
+body.light kbd { background: var(--color-bg-deep) !important; color: var(--color-text-hint); border: 1px solid var(--color-border-subtle); }
 
-/* Les sections en mode clair ont une ombre subtile pour la profondeur */
-body.light .section {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
-}
-
-/* Les kbd hints en mode clair */
-body.light kbd {
-    background: var(--color-bg-deep) !important;
-    color: var(--color-text-hint);
-    border: 1px solid var(--color-border-subtle);
-}
-
-/* Donut — trou central adapté au fond blanc */
-body.light #donut-canvas { /* le JS lit --color-bg-section pour le trou — pas modifiable ici */ }
+/* Toast en mode clair : fond légèrement plus opaque pour la lisibilité */
+body.light #toast-container.toast--success { background: rgba(20, 83, 45, 0.95); }
+body.light #toast-container.toast--warning { background: rgba(120, 53, 15, 0.95); }
+body.light #toast-container.toast--danger  { background: rgba(127, 29, 29, 0.95); }
+body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95); }
 
 /* ── Scrollbar ── */
 #dashboard::-webkit-scrollbar       { width: 4px; }
@@ -428,15 +436,15 @@ body.light #donut-canvas { /* le JS lit --color-bg-section pour le trou — pas 
 #dashboard::-webkit-scrollbar-thumb { background: var(--color-scrollbar); border-radius: 2px; }
 
 /* ── Animations ── */
-@keyframes fadeUp  { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeUp   { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeLeft { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
 
-#canvas-zone                       { animation: fadeUp   0.6s ease both; animation-delay: 0.10s; }
-#dashboard > div:nth-child(1)      { animation: fadeLeft 0.8s ease both; animation-delay: 0.40s; }
-#dashboard > div:nth-child(2)      { animation: fadeLeft 0.8s ease both; animation-delay: 0.45s; }
-#dashboard > div:nth-child(3)      { animation: fadeLeft 0.8s ease both; animation-delay: 0.60s; }
-#dashboard > div:nth-child(4)      { animation: fadeLeft 0.8s ease both; animation-delay: 0.75s; }
-#dashboard > div:nth-child(5)      { animation: fadeLeft 0.8s ease both; animation-delay: 0.90s; }
+#canvas-zone                  { animation: fadeUp   0.6s ease both; animation-delay: 0.10s; }
+#dashboard > div:nth-child(1) { animation: fadeLeft 0.8s ease both; animation-delay: 0.40s; }
+#dashboard > div:nth-child(2) { animation: fadeLeft 0.8s ease both; animation-delay: 0.45s; }
+#dashboard > div:nth-child(3) { animation: fadeLeft 0.8s ease both; animation-delay: 0.60s; }
+#dashboard > div:nth-child(4) { animation: fadeLeft 0.8s ease both; animation-delay: 0.75s; }
+#dashboard > div:nth-child(5) { animation: fadeLeft 0.8s ease both; animation-delay: 0.90s; }
 </style>
 </head>
 <body>
@@ -445,8 +453,10 @@ body.light #donut-canvas { /* le JS lit --color-bg-section pour le trou — pas 
     <div id="loading-overlay">
         <img src="{% static 'traffic/img/loading.gif' %}" alt="Chargement...">
     </div>
+
     <canvas id="traffic-canvas"></canvas>
 
+    <!-- Tooltip route -->
     <div id="route-tooltip">
         <div class="tt-title" id="tt-title">Route</div>
         <div class="tt-state">
@@ -454,6 +464,9 @@ body.light #donut-canvas { /* le JS lit --color-bg-section pour le trou — pas 
             <span id="tt-state-text"></span>
         </div>
     </div>
+
+    <!-- Toast notifications — contenu injecté par JS -->
+    <div id="toast-container"></div>
 </div>
 
 <div id="dashboard">
