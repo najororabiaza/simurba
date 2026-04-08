@@ -3,9 +3,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = 750;
 canvas.height = 650;
 
-// ─────────────────────────────────────────────────────────────
 // Chargement des images
-// ─────────────────────────────────────────────────────────────
 const bgImg = new Image();
 bgImg.src = '/static/traffic/img/backgroundGrass.jpg';
 
@@ -18,9 +16,7 @@ tlRedImg.src = '/static/traffic/img/trafficLight_red.png';
 const tlGreenImg = new Image();
 tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
 
-// ─────────────────────────────────────────────────────────────
 // Sprites — bk_cars1.png
-// ─────────────────────────────────────────────────────────────
 const carSprites = [
     { sx: 380, sy:  32, sw:  96, sh: 194 }, // Ambulance
     { sx: 494, sy:  40, sw: 104, sh: 184 }, // Rouge
@@ -32,9 +28,7 @@ const carSprites = [
     { sx: 254, sy: 692, sw:  80, sh: 172 }, // Bleu sport
 ];
 
-// ─────────────────────────────────────────────────────────────
 // Réseau routier — grille 3x3
-// ─────────────────────────────────────────────────────────────
 const nodes = [
     { x: 110, y: 114 }, { x: 374, y: 114 }, { x: 659, y: 114 },
     { x: 110, y: 324 }, { x: 374, y: 324 }, { x: 659, y: 324 },
@@ -72,22 +66,11 @@ const trafficLights = nodes.map(node => ({
     timer: Math.floor(Math.random() * 200),
 }));
 
-// ─────────────────────────────────────────────────────────────
 // Toast — système de notifications overlay canvas
-//
-// Principe : un unique conteneur DOM (#toast-container) positionné
-// en absolute dans #canvas-zone. showToast() y injecte le contenu
-// et gère les classes CSS qui pilotent l'animation via transitions.
-//
-// On utilise un seul élément réutilisé plutôt qu'un empilement de
-// noeuds créés/détruits, ce qui évite les problèmes de z-index et
-// les fuites mémoire liées à des setTimeout orphelins.
-// ─────────────────────────────────────────────────────────────
 const toastContainer = document.getElementById('toast-container');
 let toastTimerId = null;
 
 function showToast(message, type = 'info', duration = 2500) {
-    // Annule le timer précédent pour éviter un double-dismiss
     if (toastTimerId !== null) {
         clearTimeout(toastTimerId);
         toastTimerId = null;
@@ -109,9 +92,6 @@ function showToast(message, type = 'info', duration = 2500) {
     toastContainer.appendChild(icon);
     toastContainer.appendChild(text);
 
-    // Phase 1 : visible pendant `duration` ms
-    // Phase 2 : transition de sortie (300ms via CSS)
-    // Phase 3 : nettoyage complet
     toastTimerId = setTimeout(() => {
         toastContainer.classList.remove('toast-visible');
         toastContainer.classList.add('toast-hiding');
@@ -123,9 +103,7 @@ function showToast(message, type = 'info', duration = 2500) {
     }, duration);
 }
 
-// ─────────────────────────────────────────────────────────────
 // Contrôle de vitesse
-// ─────────────────────────────────────────────────────────────
 let running = false;
 let animationId = null;
 
@@ -148,9 +126,7 @@ presetBtns.forEach(btn => {
     btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
 });
 
-// ─────────────────────────────────────────────────────────────
 // Horloge
-// ─────────────────────────────────────────────────────────────
 let simSeconds = 0;
 let frameAcc   = 0;
 const FPS_REF  = 60;
@@ -163,17 +139,20 @@ function updateClock() {
     document.getElementById('clock').textContent = mm + ':' + ss;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Boutons
-// ─────────────────────────────────────────────────────────────
-const btnStart = document.getElementById('btn-start');
-const btnPause = document.getElementById('btn-pause');
-const btnReset = document.getElementById('btn-reset');
-const btnStop  = document.getElementById('btn-stop');
+// --- BOUTONS ET CONTRÔLES D'ÉTAT ---
+const btnTogglePlay = document.getElementById('btn-toggle-play');
+const btnReset      = document.getElementById('btn-reset');
+const btnStop       = document.getElementById('btn-stop');
 
 function setButtons(state) {
-    btnStart.disabled = (state === 'running');
-    btnPause.disabled = (state === 'paused' || state === 'stopped');
+    if (state === 'running') {
+        btnTogglePlay.innerHTML = '⏸ Pauser';
+        btnTogglePlay.style.background = 'var(--color-btn-pause)';
+    } else { // 'paused' ou 'stopped'
+        btnTogglePlay.innerHTML = '▶ Démarrer';
+        btnTogglePlay.style.background = 'var(--color-btn-start)';
+    }
+    
     btnReset.disabled = false;
     btnStop.disabled  = (state === 'stopped');
 }
@@ -186,9 +165,7 @@ function setStatus(text, color, paused = false) {
     dotEl.className = paused ? 'status-dot paused' : 'status-dot';
 }
 
-// ─────────────────────────────────────────────────────────────
 // Écran d'arrêt
-// ─────────────────────────────────────────────────────────────
 function drawStopScreen() {
     const W = canvas.width, H = canvas.height;
     const grad = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * 0.75);
@@ -249,9 +226,7 @@ function drawStopScreen() {
     ctx.textBaseline = 'alphabetic';
 }
 
-// ─────────────────────────────────────────────────────────────
 // TOOLTIP
-// ─────────────────────────────────────────────────────────────
 const tooltip     = document.getElementById('route-tooltip');
 const ttTitle     = document.getElementById('tt-title');
 const ttDot       = document.getElementById('tt-dot');
@@ -308,9 +283,7 @@ canvas.addEventListener('mousemove', (e) => {
 });
 canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
-// ─────────────────────────────────────────────────────────────
 // DONUT
-// ─────────────────────────────────────────────────────────────
 const donutCanvas = document.getElementById('donut-canvas');
 const dCtx        = donutCanvas.getContext('2d');
 
@@ -355,9 +328,7 @@ function drawDonut(counts, total) {
     dCtx.fillText(total, cx, cy);
 }
 
-// ─────────────────────────────────────────────────────────────
 // Dessin canvas principal
-// ─────────────────────────────────────────────────────────────
 function drawBackground() {
     if (bgImg.complete) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
@@ -444,9 +415,7 @@ function drawVehicles() {
     });
 }
 
-// ─────────────────────────────────────────────────────────────
 // Mises à jour logiques
-// ─────────────────────────────────────────────────────────────
 function updateTrafficLights() {
     trafficLights.forEach(tl => {
         tl.timer += speedFactor;
@@ -492,10 +461,11 @@ function updateDashboard() {
     drawDonut(counts, total);
 }
 
-// ─────────────────────────────────────────────────────────────
 // Boucle principale
-// ─────────────────────────────────────────────────────────────
 function loop() {
+    // LA LIGNE MAGIQUE : si running est faux, on coupe tout immédiatement !
+    if (!running) return; 
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
     drawRoadStates();
@@ -506,18 +476,35 @@ function loop() {
     updateTrafficLights();
     updateDashboard();
     updateClock();
+    
     animationId = requestAnimationFrame(loop);
 }
 
-// ─────────────────────────────────────────────────────────────
+// Fonction centrale pour basculer entre lecture et pause
+function togglePlayPause() {
+    if (running) {
+        running = false;
+        cancelAnimationFrame(animationId);
+        animationId = null;
+        setStatus('en pause', '#fb923c', true);
+        setButtons('paused');
+        showToast('Simulation en pause', 'warning');
+    } else {
+        running = true;
+        setStatus('en cours...', '#4ade80', false);
+        setButtons('running');
+        showToast('Simulation démarrée', 'success');
+        loop();
+    }
+}
+
 // Keyboard shortcuts
-// ─────────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT') return;
     switch (e.key) {
         case ' ':
             e.preventDefault();
-            if (running) btnPause.click(); else btnStart.click();
+            togglePlayPause();
             break;
         case 'r': case 'R': btnReset.click(); break;
         case 's': case 'S': btnStop.click();  break;
@@ -526,27 +513,8 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────
-// Événements boutons
-// ─────────────────────────────────────────────────────────────
-btnStart.addEventListener('click', () => {
-    if (!running) {
-        running = true;
-        setStatus('en cours...', '#4ade80', false);
-        setButtons('running');
-        showToast('Simulation démarrée', 'success');
-        loop();
-    }
-});
-
-btnPause.addEventListener('click', () => {
-    running = false;
-    cancelAnimationFrame(animationId);
-    animationId = null;
-    setStatus('en pause', '#fb923c', true);
-    setButtons('paused');
-    showToast('Simulation en pause', 'warning');
-});
+// Événements boutons interactifs
+btnTogglePlay.addEventListener('click', togglePlayPause);
 
 btnReset.addEventListener('click', () => {
     vehicles.forEach(v => { v.progress = 0; });
@@ -578,9 +546,7 @@ document.getElementById('btn-theme').addEventListener('click', () => {
     document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';
 });
 
-// ─────────────────────────────────────────────────────────────
 // Lancement
-// ─────────────────────────────────────────────────────────────
 let imagesLoaded = 0;
 const totalImages = 4;
 const loadStart   = Date.now();
