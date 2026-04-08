@@ -9,240 +9,237 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-/*  Tokens de couleur  */
+/* Tokens de couleur */
 :root {
-    --color-bg-app:       #1a1a2e;
-    --color-bg-dashboard: #16213e;
-    --color-bg-section:   #0f3460;
-    --color-bg-deep:      #1a1a2e;
-    --color-bg-canvas:    #0d1020;
-    --color-border-subtle: #333;
-    --color-border-panel:  #334155;
-    --color-text-primary: #ffffff;
-    --color-text-muted:   #aaa;
-    --color-text-hint:    #475569;
-    --color-text-sub:     #94a3b8;
-    --color-text-clock:   #e2e8f0;
-    --color-accent: #e94560;
-    --color-state-fluide:  #4ade80;
-    --color-state-ralenti: #fb923c;
-    --color-state-bouchon: #ef4444;
-    --color-btn-start:    #22c55e;
-    --color-btn-start-h:  #16a34a;
-    --color-btn-pause:    #fb923c;
-    --color-btn-pause-h:  #ea7a1e;
-    --color-btn-reset:    #64748b;
-    --color-btn-reset-h:  #475569;
-    --color-btn-stop:     #dc2626;
-    --color-btn-stop-h:   #b91c1c;
-    --color-btn-theme-bg: #0f3460;
-    --color-slider-track: #334155;
-    --color-slider-thumb: #e94560;
-    --color-scrollbar: #333;
-    --color-overlay-bg:     rgba(15, 23, 42, 0.92);
-    --color-overlay-border: #334155;
+--color-bg-app:  #1a1a2e;
+--color-bg-dashboard: #16213e;
+--color-bg-section:  #0f3460;
+--color-bg-deep:  #1a1a2e;
+--color-bg-canvas:  #0d1020;
+--color-border-subtle: #333;
+--color-border-panel:  #334155;
+--color-text-primary: #ffffff;
+--color-text-muted:  #aaa;
+--color-text-hint:  #475569;
+--color-text-sub:  #94a3b8;
+--color-text-clock:  #e2e8f0;
+--color-accent: #e94560;
+--color-state-fluide:  #4ade80;
+--color-state-ralenti: #fb923c;
+--color-state-bouchon: #ef4444;
+--color-btn-start:  #22c55e;
+--color-btn-start-h:  #16a34a;
+--color-btn-pause:  #fb923c;
+--color-btn-pause-h:  #ea7a1e;
+--color-btn-reset:  #64748b;
+--color-btn-reset-h:  #475569;
+--color-btn-stop:  #dc2626;
+--color-btn-stop-h:  #b91c1c;
+--color-btn-theme-bg: #0f3460;
+--color-slider-track: #334155;
+--color-slider-thumb: #e94560;
+--color-scrollbar: #333;
+--color-overlay-bg:  rgba(15, 23, 42, 0.92);
+--color-overlay-border: #334155;
 
-    /* Sidebar */
-    --sidebar-width:      280px;
-    --sidebar-transition: 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+/* Sidebar */
+--sidebar-width:  280px;
+--sidebar-transition: 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-    height: 100%;
-    font-family: 'Inter', sans-serif;
-    background: var(--color-bg-app);
-    color: var(--color-text-primary);
+height: 100%;
+font-family: 'Inter', sans-serif;
+background: var(--color-bg-app);
+color: var(--color-text-primary);
 }
 
 body {
-    display: flex;
-    flex-direction: row;
-    height: 100vh;
-    overflow: hidden;
+display: flex;
+flex-direction: row;
+height: 100vh;
+overflow: hidden;
 }
 
 /* Canvas zone */
- 
 #canvas-zone {
-    flex: 1;
-    position: relative;
-    display: flex;
-    align-items: center; /* permet de centrer sans forcer l'étirement */
-    justify-content: center;
-    border-right: 2px solid var(--color-border-subtle);
-    overflow: hidden;
-    padding: 12px;
-    background: var(--color-bg-canvas);
-    transition: border-color var(--sidebar-transition);
+flex: 1;
+position: relative;
+display: flex;
+align-items: center; /* permet de centrer sans forcer l'étirement */
+justify-content: center;
+border-right: 2px solid var(--color-border-subtle);
+overflow: hidden;
+padding: 12px;
+background: var(--color-bg-canvas);
+transition: border-color var(--sidebar-transition);
 }
 
 body.sidebar-collapsed #canvas-zone {
-    border-right-color: transparent;
+border-right-color: transparent;
 }
 
 #canvas-zone::after {
-    content: '';
-    position: absolute;
-    inset: 12px;
-    border-radius: 10px;
-    box-shadow:
-        inset 0 0 50px rgba(0, 0, 0, 0.55),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-    pointer-events: none;
-    z-index: 5;
+content: '';
+position: absolute;
+inset: 12px;
+border-radius: 10px;
+box-shadow:
+inset 0 0 50px rgba(0, 0, 0, 0.55),
+inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+pointer-events: none;
+z-index: 5;
 }
 
 #traffic-canvas {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* empêche le canvas de zoomer/rogner ses bords */
-    cursor: crosshair;
-    border-radius: 10px;
-    display: block;
+width: 100%;
+height: 100%;
+object-fit: contain; /* empêche le canvas de zoomer/rogner ses bords */
+cursor: crosshair;
+border-radius: 10px;
+display: block;
 }
 
 /* new : forcer le canvas à garder sa taille d'origine au centre lors du repli */
 body.sidebar-collapsed #traffic-canvas {
-    width: auto;
-    height: auto;
+width: auto;
+height: auto;
 }
 
 /* Bouton toggle sidebar */
- 
 #sidebar-toggle {
-    position: absolute;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
-    z-index: 40;
+position: absolute;
+top: 50%;
+right: 16px;
+transform: translateY(-50%);
+z-index: 40;
 
-    /* Dimensions fixes — écrase les règles globales button */
-    width: 28px !important;
-    height: 52px;
-    padding: 0;
-    border-radius: 8px;
-    border: 1px solid var(--color-border-panel);
-    background: var(--color-bg-dashboard);
-    color: var(--color-text-muted);
-    cursor: pointer;
+/* Dimensions fixes — écrase les règles globales button */
+width: 28px !important;
+height: 52px;
+padding: 0;
+border-radius: 8px;
+border: 1px solid var(--color-border-panel);
+background: var(--color-bg-dashboard);
+color: var(--color-text-muted);
+cursor: pointer;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+display: flex;
+align-items: center;
+justify-content: center;
 
-    transition:
-        background 0.15s,
-        color 0.15s,
-        box-shadow 0.15s;
+transition:
+background 0.15s,
+color 0.15s,
+box-shadow 0.15s;
 
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.40);
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.40);
 }
 
 #sidebar-toggle:hover {
-    background: var(--color-bg-section);
-    color: var(--color-text-primary);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.50);
+background: var(--color-bg-section);
+color: var(--color-text-primary);
+box-shadow: 0 4px 16px rgba(0, 0, 0, 0.50);
 }
 
 /* La flèche SVG tourne lors du repli */
 #sidebar-toggle svg {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-    transition: transform var(--sidebar-transition);
-    pointer-events: none;
+width: 14px;
+height: 14px;
+flex-shrink: 0;
+transition: transform var(--sidebar-transition);
+pointer-events: none;
 }
 
 body.sidebar-collapsed #sidebar-toggle svg {
-    transform: rotate(180deg);
+transform: rotate(180deg);
 }
 
 /* Dashboard — sidebar rétractable */
- 
 #dashboard {
-    flex: 0 0 var(--sidebar-width);
-    width: var(--sidebar-width);
-    padding: 16px;
-    background: var(--color-bg-dashboard);
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+flex: 0 0 var(--sidebar-width);
+width: var(--sidebar-width);
+padding: 16px;
+background: var(--color-bg-dashboard);
+overflow-y: auto;
+overflow-x: hidden;
+display: flex;
+flex-direction: column;
+gap: 14px;
 
-    transition:
-        width var(--sidebar-transition),
-        flex-basis var(--sidebar-transition),
-        padding var(--sidebar-transition),
-        opacity var(--sidebar-transition);
+transition:
+width var(--sidebar-transition),
+flex-basis var(--sidebar-transition),
+padding var(--sidebar-transition),
+opacity var(--sidebar-transition);
 }
 
 body.sidebar-collapsed #dashboard {
-    width: 0;
-    flex-basis: 0;
-    padding: 0;
-    opacity: 0;
-    pointer-events: none;
+width: 0;
+flex-basis: 0;
+padding: 0;
+opacity: 0;
+pointer-events: none;
 }
 
 /* Tooltip route */
 #route-tooltip {
-    position: absolute;
-    pointer-events: none;
-    display: none;
-    background: var(--color-overlay-bg);
-    border: 1px solid var(--color-overlay-border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 20;
-    backdrop-filter: blur(4px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+position: absolute;
+pointer-events: none;
+display: none;
+background: var(--color-overlay-bg);
+border: 1px solid var(--color-overlay-border);
+border-radius: 8px;
+padding: 8px 12px;
+font-size: 12px;
+white-space: nowrap;
+z-index: 20;
+backdrop-filter: blur(4px);
+box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
 #route-tooltip .tt-title { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
 #route-tooltip .tt-state { font-size: 11px; color: var(--color-text-sub); }
 #route-tooltip .tt-dot {
-    display: inline-block;
-    width: 8px; height: 8px;
-    border-radius: 50%; margin-right: 5px; vertical-align: middle;
+display: inline-block;
+width: 8px; height: 8px;
+border-radius: 50%; margin-right: 5px; vertical-align: middle;
 }
 
 /* Toast */
 #toast-container {
-    position: absolute;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%) translateY(12px);
-    z-index: 30;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Inter', sans-serif;
-    white-space: nowrap;
-    background: rgba(15, 23, 42, 0.90);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(8px);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
+position: absolute;
+bottom: 28px;
+left: 50%;
+transform: translateX(-50%) translateY(12px);
+z-index: 30;
+display: flex;
+align-items: center;
+gap: 9px;
+padding: 10px 16px;
+border-radius: 10px;
+font-size: 13px;
+font-weight: 600;
+font-family: 'Inter', sans-serif;
+white-space: nowrap;
+background: rgba(15, 23, 42, 0.90);
+border: 1px solid rgba(255, 255, 255, 0.10);
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+backdrop-filter: blur(8px);
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.25s ease, transform 0.25s ease;
 }
 #toast-container.toast-visible {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
+opacity: 1;
+transform: translateX(-50%) translateY(0);
+pointer-events: auto;
 }
 #toast-container.toast-hiding {
-    opacity: 0;
-    transform: translateX(-50%) translateY(12px);
-    pointer-events: none;
+opacity: 0;
+transform: translateX(-50%) translateY(12px);
+pointer-events: none;
 }
 .toast-icon { font-size: 15px; line-height: 1; flex-shrink: 0; }
 .toast-text { font-size: 13px; line-height: 1.3; }
@@ -252,83 +249,81 @@ body.sidebar-collapsed #dashboard {
 #toast-container.toast--warning .toast-icon { color: #fb923c; }
 #toast-container.toast--danger  { background: rgba(127, 29, 29, 0.92); border-color: rgba(239, 68, 68, 0.40); color: #fecaca; }
 #toast-container.toast--danger .toast-icon  { color: #ef4444; }
-#toast-container.toast--info    { background: rgba(30, 58, 138, 0.92); border-color: rgba(96, 165, 250, 0.40); color: #bfdbfe; }
-#toast-container.toast--info .toast-icon    { color: #60a5fa; }
+#toast-container.toast--info  { background: rgba(30, 58, 138, 0.92); border-color: rgba(96, 165, 250, 0.40); color: #bfdbfe; }
+#toast-container.toast--info .toast-icon  { color: #60a5fa; }
 
-/*  Overlay de chargement  */
+/* Overlay de chargement */
 #loading-overlay {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--color-bg-app);
-    z-index: 10;
-    transition: opacity 0.4s ease;
+position: absolute; inset: 0;
+display: flex; align-items: center; justify-content: center;
+background: var(--color-bg-app);
+z-index: 10;
+transition: opacity 0.4s ease;
 }
 #loading-overlay img { width: clamp(300px, 50vw, 500px); }
 #loading-overlay.hidden { opacity: 0; pointer-events: none; }
 
 /* Responsive */
- 
 @media (max-width: 1023px) {
-    body { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; }
-    #canvas-zone {
-        border-right: none; border-bottom: 2px solid var(--color-border-subtle);
-        flex: none; width: 100%; height: 60vw;
-        max-height: 520px; min-height: 300px;
-    }
-    /* Sidebar toujours visible en mobile — toggle masqué */
-    #sidebar-toggle { display: none; }
-    #dashboard {
-        flex: none !important; width: 100% !important; flex-basis: auto !important;
-        display: grid !important; grid-template-columns: 1fr 1fr;
-        gap: 12px; padding: 16px !important;
-        opacity: 1 !important; pointer-events: auto !important;
-        overflow: visible !important;
-    }
-    #dashboard > div:first-child { grid-column: 1 / -1; }
+body { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; }
+#canvas-zone {
+border-right: none; border-bottom: 2px solid var(--color-border-subtle);
+flex: none; width: 100%; height: 60vw;
+max-height: 520px; min-height: 300px;
+}
+/* Sidebar toujours visible en mobile — toggle masqué */
+#sidebar-toggle { display: none; }
+#dashboard {
+flex: none !important; width: 100% !important; flex-basis: auto !important;
+display: grid !important; grid-template-columns: 1fr 1fr;
+gap: 12px; padding: 16px !important;
+opacity: 1 !important; pointer-events: auto !important;
+overflow: visible !important;
+}
+#dashboard > div:first-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 767px) {
-    body { flex-direction: column; height: auto; overflow-y: auto; }
-    #canvas-zone {
-        border-right: none; border-bottom: 2px solid var(--color-border-subtle);
-        height: 75vw; max-height: 400px; min-height: 220px;
-    }
-    #dashboard { display: flex !important; flex-direction: column; gap: 12px; padding: 12px !important; width: 100% !important; }
+body { flex-direction: column; height: auto; overflow-y: auto; }
+#canvas-zone {
+border-right: none; border-bottom: 2px solid var(--color-border-subtle);
+height: 75vw; max-height: 400px; min-height: 220px;
+}
+#dashboard { display: flex !important; flex-direction: column; gap: 12px; padding: 12px !important; width: 100% !important; }
 }
 
 @media (min-width: 1440px) {
-    :root { --sidebar-width: 320px; }
+:root { --sidebar-width: 320px; }
 }
 
 /* Composants */
- 
 h2 { color: var(--color-accent); font-size: clamp(15px, 2vw, 20px); }
 .section { background: var(--color-bg-section); border-radius: 8px; padding: 12px; }
 
 .section-title {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 600;
-    letter-spacing: 0.08em; color: var(--color-text-muted);
-    margin-bottom: 10px; text-transform: uppercase;
+display: flex; align-items: center; gap: 6px;
+font-size: 11px; font-weight: 600;
+letter-spacing: 0.08em; color: var(--color-text-muted);
+margin-bottom: 10px; text-transform: uppercase;
 }
 .section-title svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
 
 button {
-    display: block; width: 100%; margin-bottom: 0;
-    padding: 9px; border: none; border-radius: 6px;
-    cursor: pointer; font-size: clamp(12px, 1.5vw, 14px);
-    font-family: 'Inter', sans-serif; color: var(--color-text-primary);
-    transition: background 0.15s, opacity 0.15s;
+display: block; width: 100%; margin-bottom: 0;
+padding: 9px; border: none; border-radius: 6px;
+cursor: pointer; font-size: clamp(12px, 1.5vw, 14px);
+font-family: 'Inter', sans-serif; color: var(--color-text-primary);
+transition: background 0.15s, opacity 0.15s;
 }
 button:disabled { opacity: 0.35; cursor: not-allowed; }
 
-.btn-group           { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+.btn-group  { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
 .btn-group-secondary { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 
-#btn-start { background: var(--color-btn-start); }
-#btn-start:hover:not(:disabled) { background: var(--color-btn-start-h); }
-#btn-pause { background: var(--color-btn-pause); }
-#btn-pause:hover:not(:disabled) { background: var(--color-btn-pause-h); }
+/* Nouveau style pour le bouton toggle principal */
+#btn-toggle-play { background: var(--color-btn-pause); transition: background 0.2s ease; }
+/* Hover est géré par la couleur en cours, optionnel d'ajouter un effet ici si besoin */
+
 #btn-reset { background: var(--color-btn-reset); }
 #btn-reset:hover:not(:disabled) { background: var(--color-btn-reset-h); }
 #btn-stop  { background: var(--color-btn-stop); }
@@ -338,57 +333,57 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 .slider-row label { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
 .slider-row span  { font-size: 12px; color: var(--color-accent); min-width: 28px; text-align: right; }
 .slider-row input[type=range] {
-    flex: 1; min-width: 0;
-    -webkit-appearance: none; appearance: none;
-    height: 4px; border-radius: 2px;
-    background: var(--color-slider-track); outline: none;
+flex: 1; min-width: 0;
+-webkit-appearance: none; appearance: none;
+height: 4px; border-radius: 2px;
+background: var(--color-slider-track); outline: none;
 }
 .slider-row input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--color-slider-thumb); cursor: pointer;
+-webkit-appearance: none;
+width: 14px; height: 14px; border-radius: 50%;
+background: var(--color-slider-thumb); cursor: pointer;
 }
 .slider-row input[type=range]::-moz-range-thumb {
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--color-slider-thumb); border: none; cursor: pointer;
+width: 14px; height: 14px; border-radius: 50%;
+background: var(--color-slider-thumb); border: none; cursor: pointer;
 }
 
 .speed-presets { display: flex; gap: 5px; margin-top: 7px; }
 .speed-preset {
-    flex: 1; padding: 4px 0; font-size: 11px; font-weight: 600;
-    color: var(--color-text-muted);
-    background: var(--color-bg-deep);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: 4px; cursor: pointer;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
-    text-align: center; width: auto; display: block; margin-bottom: 0;
+flex: 1; padding: 4px 0; font-size: 11px; font-weight: 600;
+color: var(--color-text-muted);
+background: var(--color-bg-deep);
+border: 1px solid var(--color-border-subtle);
+border-radius: 4px; cursor: pointer;
+transition: background 0.12s, color 0.12s, border-color 0.12s;
+text-align: center; width: auto; display: block; margin-bottom: 0;
 }
 .speed-preset:hover { background: var(--color-bg-section); color: var(--color-text-primary); }
 .speed-preset.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 
 .status-row {
-    display: flex; justify-content: space-between;
-    align-items: center; font-size: 13px; margin-bottom: 10px;
+display: flex; justify-content: space-between;
+align-items: center; font-size: 13px; margin-bottom: 10px;
 }
 #status { font-weight: 600; }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.4; transform: scale(0.7); }
+0%, 100% { opacity: 1; transform: scale(1); }
+50%  { opacity: 0.4; transform: scale(0.7); }
 }
 .status-dot {
-    display: inline-block; width: 8px; height: 8px;
-    border-radius: 50%; margin-right: 6px;
-    background: var(--color-state-fluide);
-    animation: pulse 1.4s ease-in-out infinite;
-    vertical-align: middle;
+display: inline-block; width: 8px; height: 8px;
+border-radius: 50%; margin-right: 6px;
+background: var(--color-state-fluide);
+animation: pulse 1.4s ease-in-out infinite;
+vertical-align: middle;
 }
 .status-dot.paused { background: var(--color-state-ralenti); animation: none; }
 
 #clock {
-    font-size: clamp(18px, 3vw, 24px); font-weight: 700;
-    color: var(--color-text-clock); letter-spacing: 0.05em;
-    text-align: center; margin: 2px 0;
+font-size: clamp(18px, 3vw, 24px); font-weight: 700;
+color: var(--color-text-clock); letter-spacing: 0.05em;
+text-align: center; margin: 2px 0;
 }
 .clock-sub { font-size: 11px; color: var(--color-text-hint); text-align: center; }
 
@@ -399,52 +394,51 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 .stat-bar-bg { background: var(--color-bg-deep); height: 9px; border-radius: 5px; overflow: visible; position: relative; }
 .stat-bar { height: 9px; border-radius: 5px; width: 0%; transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: visible; }
 .stat-bar-value {
-    position: absolute; left: calc(100% + 6px); top: 50%;
-    transform: translateY(-50%);
-    font-size: 10px; font-weight: 600; color: var(--color-text-muted);
-    white-space: nowrap; opacity: 0;
-    transition: opacity 0.3s ease 0.2s; pointer-events: none;
+position: absolute; left: calc(100% + 6px); top: 50%;
+transform: translateY(-50%);
+font-size: 10px; font-weight: 600; color: var(--color-text-muted);
+white-space: nowrap; opacity: 0;
+transition: opacity 0.3s ease 0.2s; pointer-events: none;
 }
 .stat-bar.has-data .stat-bar-value { opacity: 1; }
 
 .donut-wrapper { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
 #donut-canvas  { flex-shrink: 0; }
-.donut-legend       { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.donut-legend  { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
 .donut-legend-item  { display: flex; align-items: center; gap: 6px; }
-.donut-legend-dot   { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.donut-legend-pct   { margin-left: auto; font-weight: 600; font-size: 12px; min-width: 32px; text-align: right; }
+.donut-legend-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.donut-legend-pct  { margin-left: auto; font-weight: 600; font-size: 12px; min-width: 32px; text-align: right; }
 
-/* 
-   Mode clair — palette WCAG AA
- */
+/* Mode clair — palette WCAG AA
+*/
 body.light {
-    --color-bg-app:       #f8fafc;
-    --color-bg-dashboard: #f1f5f9;
-    --color-bg-section:   #ffffff;
-    --color-bg-deep:      #e2e8f0;
-    --color-bg-canvas:    #dde3ed;
-    --color-border-subtle: #cbd5e1;
-    --color-border-panel:  #94a3b8;
-    --color-text-primary: #1e293b;
-    --color-text-muted:   #374151;
-    --color-text-hint:    #4b5563;
-    --color-text-sub:     #64748b;
-    --color-text-clock:   #1e293b;
-    --color-accent: #be123c;
-    --color-btn-start:    #16a34a;
-    --color-btn-start-h:  #15803d;
-    --color-btn-pause:    #c2410c;
-    --color-btn-pause-h:  #9a3412;
-    --color-btn-reset:    #475569;
-    --color-btn-reset-h:  #334155;
-    --color-btn-stop:     #b91c1c;
-    --color-btn-stop-h:   #991b1b;
-    --color-btn-theme-bg: #e2e8f0;
-    --color-slider-track: #94a3b8;
-    --color-slider-thumb: #be123c;
-    --color-scrollbar: #94a3b8;
-    --color-overlay-bg:     rgba(248, 250, 252, 0.95);
-    --color-overlay-border: #94a3b8;
+--color-bg-app:  #f8fafc;
+--color-bg-dashboard: #f1f5f9;
+--color-bg-section:  #ffffff;
+--color-bg-deep:  #e2e8f0;
+--color-bg-canvas:  #dde3ed;
+--color-border-subtle: #cbd5e1;
+--color-border-panel:  #94a3b8;
+--color-text-primary: #1e293b;
+--color-text-muted:  #374151;
+--color-text-hint:  #4b5563;
+--color-text-sub:  #64748b;
+--color-text-clock:  #1e293b;
+--color-accent: #be123c;
+--color-btn-start:  #16a34a;
+--color-btn-start-h:  #15803d;
+--color-btn-pause:  #c2410c;
+--color-btn-pause-h:  #9a3412;
+--color-btn-reset:  #475569;
+--color-btn-reset-h:  #334155;
+--color-btn-stop:  #b91c1c;
+--color-btn-stop-h:  #991b1b;
+--color-btn-theme-bg: #e2e8f0;
+--color-slider-track: #94a3b8;
+--color-slider-thumb: #be123c;
+--color-scrollbar: #94a3b8;
+--color-overlay-bg:  rgba(248, 250, 252, 0.95);
+--color-overlay-border: #94a3b8;
 }
 
 body.light button:not(.speed-preset):not(#btn-theme):not(#sidebar-toggle) { color: #ffffff; }
@@ -452,22 +446,22 @@ body.light #sidebar-toggle { background: var(--color-bg-section); border-color: 
 body.light #sidebar-toggle:hover { background: var(--color-bg-deep); color: var(--color-text-primary); }
 body.light #status { color: #15803d !important; }
 body.light .section { box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05); }
-body.light kbd { background: var(--color-bg-deep) !important; color: var(--color-text-hint); border: 1px solid var(--color-border-subtle); }
+body.light kbd { background: #cbd5e1 !important; color: #0f172a !important; border-color: #94a3b8 !important; }
 body.light #toast-container.toast--success { background: rgba(20, 83, 45, 0.95); }
 body.light #toast-container.toast--warning { background: rgba(120, 53, 15, 0.95); }
 body.light #toast-container.toast--danger  { background: rgba(127, 29, 29, 0.95); }
-body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95); }
+body.light #toast-container.toast--info  { background: rgba(30, 58, 138, 0.95); }
 
-/*  Scrollbar  */
-#dashboard::-webkit-scrollbar       { width: 4px; }
+/* Scrollbar */
+#dashboard::-webkit-scrollbar  { width: 4px; }
 #dashboard::-webkit-scrollbar-track { background: transparent; }
 #dashboard::-webkit-scrollbar-thumb { background: var(--color-scrollbar); border-radius: 2px; }
 
-/*  Animations d'entrée  */
-@keyframes fadeUp   { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+/* Animations d'entrée */
+@keyframes fadeUp  { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeLeft { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
 
-#canvas-zone                  { animation: fadeUp   0.6s ease both; animation-delay: 0.10s; }
+#canvas-zone  { animation: fadeUp  0.6s ease both; animation-delay: 0.10s; }
 #dashboard > div:nth-child(1) { animation: fadeLeft 0.8s ease both; animation-delay: 0.40s; }
 #dashboard > div:nth-child(2) { animation: fadeLeft 0.8s ease both; animation-delay: 0.45s; }
 #dashboard > div:nth-child(3) { animation: fadeLeft 0.8s ease both; animation-delay: 0.60s; }
@@ -478,185 +472,183 @@ body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95)
 <body>
 
 <div id="canvas-zone">
-    <div id="loading-overlay">
-        <img src="{% static 'traffic/img/loading.gif' %}" alt="Chargement...">
-    </div>
+<div id="loading-overlay">
+<img src="{% static 'traffic/img/loading.gif' %}" alt="Chargement...">
+</div>
 
-    <canvas id="traffic-canvas"></canvas>
+<canvas id="traffic-canvas"></canvas>
 
-    <div id="route-tooltip">
-        <div class="tt-title" id="tt-title">Route</div>
-        <div class="tt-state">
-            <span class="tt-dot" id="tt-dot"></span>
-            <span id="tt-state-text"></span>
-        </div>
-    </div>
+<div id="route-tooltip">
+<div class="tt-title" id="tt-title">Route</div>
+<div class="tt-state">
+<span class="tt-dot" id="tt-dot"></span>
+<span id="tt-state-text"></span>
+</div>
+</div>
 
-    <div id="toast-container"></div>
+<div id="toast-container"></div>
 
-    <button id="sidebar-toggle" title="Réduire / afficher le panneau  [D]">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </button>
+<button id="sidebar-toggle" title="Réduire / afficher le panneau [D]">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<polyline points="9 18 15 12 9 6"/>
+</svg>
+</button>
 </div>
 
 <div id="dashboard">
 
-    <div style="display:flex; align-items:center; justify-content:space-between;">
-        <h2>🚦 Simurba</h2>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <button id="btn-theme" title="Mode clair / nuit"
-                style="width:auto; padding:3px 8px; font-size:14px;
-                       background:var(--color-btn-theme-bg); border-radius:4px;
-                       margin:0; line-height:1;">🌙</button>
-            <span style="font-size:10px; font-weight:600; color:var(--color-text-hint);
-                         background:var(--color-btn-theme-bg); border-radius:4px;
-                         padding:3px 7px; letter-spacing:0.05em;">v3</span>
-        </div>
-    </div>
+<div style="display:flex; align-items:center; justify-content:space-between;">
+<h2>🚦 Simurba</h2>
+<div style="display:flex; align-items:center; gap:8px;">
+<button id="btn-theme" title="Mode clair / nuit"
+style="width:auto; padding:3px 8px; font-size:14px;
+background:var(--color-btn-theme-bg); border-radius:4px;
+margin:0; line-height:1;">🌙</button>
+<span style="font-size:10px; font-weight:600; color:var(--color-text-hint);
+background:var(--color-btn-theme-bg); border-radius:4px;
+padding:3px 7px; letter-spacing:0.05em;">v3</span>
+</div>
+</div>
 
-    <div class="section">
-        <p class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/>
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/>
-            </svg>
-            Contrôles
-        </p>
+<div class="section">
+<p class="section-title">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="3"/>
+<path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/>
+<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/>
+</svg>
+Contrôles
+</p>
 
-        <div class="status-row">
-            <span style="font-size:12px; color:var(--color-text-muted);">État :</span>
-            <span style="display:flex; align-items:center;">
-                <span class="status-dot" id="status-dot"></span>
-                <span id="status" style="color:var(--color-state-fluide);">en cours...</span>
-            </span>
-        </div>
+<div class="status-row">
+<span style="font-size:12px; color:var(--color-text-muted);">État :</span>
+<span style="display:flex; align-items:center;">
+<span class="status-dot" id="status-dot"></span>
+<span id="status" style="color:var(--color-state-fluide);">en cours...</span>
+</span>
+</div>
 
-        <div class="btn-group">
-            <button type="button" id="btn-start">▶ Démarrer</button>
-            <button type="button" id="btn-pause">⏸ Pauser</button>
-        </div>
-        <div class="btn-group-secondary">
-            <button type="button" id="btn-reset">↺ Réinitialiser</button>
-            <button type="button" id="btn-stop">⏹ Arrêter</button>
-        </div>
+<button type="button" id="btn-toggle-play" style="margin-bottom: 6px;">⏸ Pauser</button>
 
-        <div class="slider-row">
-            <label>🐢</label>
-            <input type="range" id="speed-slider" min="1" max="5" step="0.5" value="1">
-            <label>⚡</label>
-            <span id="speed-label">×1</span>
-        </div>
+<div class="btn-group-secondary">
+<button type="button" id="btn-reset">↺ Réinitialiser</button>
+<button type="button" id="btn-stop">⏹ Arrêter</button>
+</div>
 
-        <div class="speed-presets">
-            <button type="button" class="speed-preset active" data-speed="1">×1</button>
-            <button type="button" class="speed-preset"        data-speed="2">×2</button>
-            <button type="button" class="speed-preset"        data-speed="3">×3</button>
-            <button type="button" class="speed-preset"        data-speed="5">×5</button>
-        </div>
+<div class="slider-row">
+<label>🐢</label>
+<input type="range" id="speed-slider" min="1" max="5" step="0.5" value="1">
+<label>⚡</label>
+<span id="speed-label">×1</span>
+</div>
 
-        <p style="font-size:10px; color:var(--color-text-hint); margin-top:8px; line-height:1.6;">
-            ⌨️
-            <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">Espace</kbd> pause/play &nbsp;
-            <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">R</kbd> reset &nbsp;
-            <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">+/-</kbd> vitesse &nbsp;
-            <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">D</kbd> panneau
-        </p>
-    </div>
+<div class="speed-presets">
+<button type="button" class="speed-preset active" data-speed="1">×1</button>
+<button type="button" class="speed-preset" data-speed="2">×2</button>
+<button type="button" class="speed-preset" data-speed="3">×3</button>
+<button type="button" class="speed-preset" data-speed="5">×5</button>
+</div>
 
-    <div class="section">
-        <p class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-            Temps de simulation
-        </p>
-        <div id="clock">00:00</div>
-        <p class="clock-sub">mm:ss écoulées</p>
-    </div>
+<p style="font-size:11px; color:var(--color-text-sub); margin-top:12px; line-height:2; text-align:center;">
+⌨️
+<kbd style="background:#334155; color:#f8fafc; border:1px solid #475569; border-radius:4px; padding:2px 6px; font-weight:600; font-family:monospace; margin-right:4px;">Espace</kbd> play/pause
+<kbd style="background:#334155; color:#f8fafc; border:1px solid #475569; border-radius:4px; padding:2px 6px; font-weight:600; font-family:monospace; margin-left:6px; margin-right:4px;">R</kbd> reset
+<kbd style="background:#334155; color:#f8fafc; border:1px solid #475569; border-radius:4px; padding:2px 6px; font-weight:600; font-family:monospace; margin-left:6px; margin-right:4px;">+/-</kbd> vitesse
+<kbd style="background:#334155; color:#f8fafc; border:1px solid #475569; border-radius:4px; padding:2px 6px; font-weight:600; font-family:monospace; margin-left:6px; margin-right:4px;">D</kbd> panneau
+</p>
+</div>
 
-    <div class="section">
-        <p class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
-            </svg>
-            Densité globale
-        </p>
-        <div class="donut-wrapper">
-            <canvas id="donut-canvas" width="90" height="90"></canvas>
-            <div class="donut-legend">
-                <div class="donut-legend-item">
-                    <span class="donut-legend-dot" style="background:var(--color-state-fluide);"></span>
-                    <span>Fluide</span>
-                    <span class="donut-legend-pct" id="pct-fluide">—</span>
-                </div>
-                <div class="donut-legend-item">
-                    <span class="donut-legend-dot" style="background:var(--color-state-ralenti);"></span>
-                    <span>Ralenti</span>
-                    <span class="donut-legend-pct" id="pct-ralenti">—</span>
-                </div>
-                <div class="donut-legend-item">
-                    <span class="donut-legend-dot" style="background:var(--color-state-bouchon);"></span>
-                    <span>Bouchon</span>
-                    <span class="donut-legend-pct" id="pct-bouchon">—</span>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="section">
+<p class="section-title">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+</svg>
+Temps de simulation
+</p>
+<div id="clock">00:00</div>
+<p class="clock-sub">mm:ss écoulées</p>
+</div>
 
-    <div class="section">
-        <p class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="5" y="2" width="14" height="20" rx="2"/>
-                <circle cx="12" cy="7"  r="1" fill="currentColor"/>
-                <circle cx="12" cy="12" r="1" fill="currentColor"/>
-                <circle cx="12" cy="17" r="1" fill="currentColor"/>
-            </svg>
-            Trafic en direct
-        </p>
+<div class="section">
+<p class="section-title">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+</svg>
+Densité globale
+</p>
+<div class="donut-wrapper">
+<canvas id="donut-canvas" width="90" height="90"></canvas>
+<div class="donut-legend">
+<div class="donut-legend-item">
+<span class="donut-legend-dot" style="background:var(--color-state-fluide);"></span>
+<span>Fluide</span>
+<span class="donut-legend-pct" id="pct-fluide">—</span>
+</div>
+<div class="donut-legend-item">
+<span class="donut-legend-dot" style="background:var(--color-state-ralenti);"></span>
+<span>Ralenti</span>
+<span class="donut-legend-pct" id="pct-ralenti">—</span>
+</div>
+<div class="donut-legend-item">
+<span class="donut-legend-dot" style="background:var(--color-state-bouchon);"></span>
+<span>Bouchon</span>
+<span class="donut-legend-pct" id="pct-bouchon">—</span>
+</div>
+</div>
+</div>
+</div>
 
-        <div class="stat-item">
-            <div class="stat-label" style="color:var(--color-text-sub);">
-                🚗 Véhicules actifs : <strong id="count-total">0</strong>
-            </div>
-        </div>
+<div class="section">
+<p class="section-title">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<rect x="5" y="2" width="14" height="20" rx="2"/>
+<circle cx="12" cy="7" r="1" fill="currentColor"/>
+<circle cx="12" cy="12" r="1" fill="currentColor"/>
+<circle cx="12" cy="17" r="1" fill="currentColor"/>
+</svg>
+Trafic en direct
+</p>
 
-        <div class="stat-item">
-            <div class="stat-label">
-                <span style="color:var(--color-state-fluide);">●</span> Fluide : <span id="count-fluide">0</span>
-            </div>
-            <div class="stat-bar-bg">
-                <div class="stat-bar" id="bar-fluide" style="background:var(--color-state-fluide);">
-                    <span class="stat-bar-value" id="tip-fluide"></span>
-                </div>
-            </div>
-        </div>
+<div class="stat-item">
+<div class="stat-label" style="color:var(--color-text-sub);">
+🚗 Véhicules actifs : <strong id="count-total">0</strong>
+</div>
+</div>
 
-        <div class="stat-item">
-            <div class="stat-label">
-                <span style="color:var(--color-state-ralenti);">●</span> Ralenti : <span id="count-ralenti">0</span>
-            </div>
-            <div class="stat-bar-bg">
-                <div class="stat-bar" id="bar-ralenti" style="background:var(--color-state-ralenti);">
-                    <span class="stat-bar-value" id="tip-ralenti"></span>
-                </div>
-            </div>
-        </div>
+<div class="stat-item">
+<div class="stat-label">
+<span style="color:var(--color-state-fluide);">●</span> Fluide : <span id="count-fluide">0</span>
+</div>
+<div class="stat-bar-bg">
+<div class="stat-bar" id="bar-fluide" style="background:var(--color-state-fluide);">
+<span class="stat-bar-value" id="tip-fluide"></span>
+</div>
+</div>
+</div>
 
-        <div class="stat-item">
-            <div class="stat-label">
-                <span style="color:var(--color-state-bouchon);">●</span> Bouchon : <span id="count-bouchon">0</span>
-            </div>
-            <div class="stat-bar-bg">
-                <div class="stat-bar" id="bar-bouchon" style="background:var(--color-state-bouchon);">
-                    <span class="stat-bar-value" id="tip-bouchon"></span>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="stat-item">
+<div class="stat-label">
+<span style="color:var(--color-state-ralenti);">●</span> Ralenti : <span id="count-ralenti">0</span>
+</div>
+<div class="stat-bar-bg">
+<div class="stat-bar" id="bar-ralenti" style="background:var(--color-state-ralenti);">
+<span class="stat-bar-value" id="tip-ralenti"></span>
+</div>
+</div>
+</div>
+
+<div class="stat-item">
+<div class="stat-label">
+<span style="color:var(--color-state-bouchon);">●</span> Bouchon : <span id="count-bouchon">0</span>
+</div>
+<div class="stat-bar-bg">
+<div class="stat-bar" id="bar-bouchon" style="background:var(--color-state-bouchon);">
+<span class="stat-bar-value" id="tip-bouchon"></span>
+</div>
+</div>
+</div>
+</div>
 
 </div><script src="{% static 'traffic/js/simulation.js' %}"></script>
 
@@ -665,27 +657,27 @@ body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95)
 // IIFE isolé — ne modifie rien dans simulation.js.
 // localStorage persiste l'état entre les rechargements.
 (function () {
-    const btn  = document.getElementById('sidebar-toggle');
-    const body = document.body;
-    const KEY  = 'simurba_sidebar_collapsed';
+const btn  = document.getElementById('sidebar-toggle');
+const body = document.body;
+const KEY  = 'simurba_sidebar_collapsed';
 
-    // Restaure l'état sauvegardé immédiatement (avant le premier paint)
-    if (localStorage.getItem(KEY) === '1') {
-        body.classList.add('sidebar-collapsed');
-    }
+// Restaure l'état sauvegardé immédiatement (avant le premier paint)
+if (localStorage.getItem(KEY) === '1') {
+body.classList.add('sidebar-collapsed');
+}
 
-    function toggle() {
-        const collapsed = body.classList.toggle('sidebar-collapsed');
-        localStorage.setItem(KEY, collapsed ? '1' : '0');
-    }
+function toggle() {
+const collapsed = body.classList.toggle('sidebar-collapsed');
+localStorage.setItem(KEY, collapsed ? '1' : '0');
+}
 
-    btn.addEventListener('click', toggle);
+btn.addEventListener('click', toggle);
 
-    // Raccourci D (Dashboard) — cohérent avec les autres raccourcis
-    document.addEventListener('keydown', function (e) {
-        if (e.target.tagName === 'INPUT') return;
-        if (e.key === 'd' || e.key === 'D') toggle();
-    });
+// Raccourci D (Dashboard) — cohérent avec les autres raccourcis
+document.addEventListener('keydown', function (e) {
+if (e.target.tagName === 'INPUT') return;
+if (e.key === 'd' || e.key === 'D') toggle();
+});
 }());
 </script>
 
