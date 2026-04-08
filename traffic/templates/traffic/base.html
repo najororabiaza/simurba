@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-/* ── Tokens de couleur ── */
+/*  Tokens de couleur  */
 :root {
     --color-bg-app:       #1a1a2e;
     --color-bg-dashboard: #16213e;
@@ -41,6 +41,10 @@
     --color-scrollbar: #333;
     --color-overlay-bg:     rgba(15, 23, 42, 0.92);
     --color-overlay-border: #334155;
+
+    /* Sidebar */
+    --sidebar-width:      280px;
+    --sidebar-transition: 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -59,19 +63,23 @@ body {
     overflow: hidden;
 }
 
-/* ─────────────────────────────────────────
-   Canvas zone
-───────────────────────────────────────── */
+/* Canvas zone */
+ 
 #canvas-zone {
-    flex: 3;
+    flex: 1;
     position: relative;
     display: flex;
-    align-items: stretch;
+    align-items: center; /* permet de centrer sans forcer l'étirement */
     justify-content: center;
     border-right: 2px solid var(--color-border-subtle);
     overflow: hidden;
     padding: 12px;
     background: var(--color-bg-canvas);
+    transition: border-color var(--sidebar-transition);
+}
+
+body.sidebar-collapsed #canvas-zone {
+    border-right-color: transparent;
 }
 
 #canvas-zone::after {
@@ -89,13 +97,97 @@ body {
 #traffic-canvas {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain; /* empêche le canvas de zoomer/rogner ses bords */
     cursor: crosshair;
     border-radius: 10px;
     display: block;
 }
 
-/* ── Tooltip route ── */
+/* new : forcer le canvas à garder sa taille d'origine au centre lors du repli */
+body.sidebar-collapsed #traffic-canvas {
+    width: auto;
+    height: auto;
+}
+
+/* Bouton toggle sidebar */
+ 
+#sidebar-toggle {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    z-index: 40;
+
+    /* Dimensions fixes — écrase les règles globales button */
+    width: 28px !important;
+    height: 52px;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid var(--color-border-panel);
+    background: var(--color-bg-dashboard);
+    color: var(--color-text-muted);
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition:
+        background 0.15s,
+        color 0.15s,
+        box-shadow 0.15s;
+
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.40);
+}
+
+#sidebar-toggle:hover {
+    background: var(--color-bg-section);
+    color: var(--color-text-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.50);
+}
+
+/* La flèche SVG tourne lors du repli */
+#sidebar-toggle svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    transition: transform var(--sidebar-transition);
+    pointer-events: none;
+}
+
+body.sidebar-collapsed #sidebar-toggle svg {
+    transform: rotate(180deg);
+}
+
+/* Dashboard — sidebar rétractable */
+ 
+#dashboard {
+    flex: 0 0 var(--sidebar-width);
+    width: var(--sidebar-width);
+    padding: 16px;
+    background: var(--color-bg-dashboard);
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    transition:
+        width var(--sidebar-transition),
+        flex-basis var(--sidebar-transition),
+        padding var(--sidebar-transition),
+        opacity var(--sidebar-transition);
+}
+
+body.sidebar-collapsed #dashboard {
+    width: 0;
+    flex-basis: 0;
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Tooltip route */
 #route-tooltip {
     position: absolute;
     pointer-events: none;
@@ -118,102 +210,52 @@ body {
     border-radius: 50%; margin-right: 5px; vertical-align: middle;
 }
 
-/* ─────────────────────────────────────────
-   Toast — overlay canvas
-   Positionné en bas à gauche du canvas-zone
-   (en haut à gauche le tooltip route serait
-   masqué si on l'avait mis en haut à droite).
-───────────────────────────────────────── */
+/* Toast */
 #toast-container {
-    /* Caché par défaut — rendu invisible sans display:none
-       pour que les transitions CSS fonctionnent */
     position: absolute;
     bottom: 28px;
     left: 50%;
     transform: translateX(-50%) translateY(12px);
     z-index: 30;
-
     display: flex;
     align-items: center;
     gap: 9px;
-
     padding: 10px 16px;
     border-radius: 10px;
     font-size: 13px;
     font-weight: 600;
     font-family: 'Inter', sans-serif;
     white-space: nowrap;
-
-    /* Fond semi-transparent foncé par défaut — surchargé par les variantes */
     background: rgba(15, 23, 42, 0.90);
     border: 1px solid rgba(255, 255, 255, 0.10);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(8px);
-
-    /* État initial : invisible et décalé vers le bas */
     opacity: 0;
     pointer-events: none;
-
-    /* Transition commune entrée/sortie */
     transition: opacity 0.25s ease, transform 0.25s ease;
 }
-
-/* Entrée : visible et à sa position finale */
 #toast-container.toast-visible {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
     pointer-events: auto;
 }
-
-/* Sortie : repasse à l'état initial — la classe est ajoutée par JS */
 #toast-container.toast-hiding {
     opacity: 0;
     transform: translateX(-50%) translateY(12px);
     pointer-events: none;
 }
-
-/* ── Icône dans le toast ── */
-.toast-icon {
-    font-size: 15px;
-    line-height: 1;
-    flex-shrink: 0;
-}
-
-.toast-text {
-    font-size: 13px;
-    line-height: 1.3;
-}
-
-/* ── Variantes de couleur ── */
-#toast-container.toast--success {
-    background: rgba(20, 83, 45, 0.92);
-    border-color: rgba(74, 222, 128, 0.40);
-    color: #bbf7d0;
-}
+.toast-icon { font-size: 15px; line-height: 1; flex-shrink: 0; }
+.toast-text { font-size: 13px; line-height: 1.3; }
+#toast-container.toast--success { background: rgba(20, 83, 45, 0.92); border-color: rgba(74, 222, 128, 0.40); color: #bbf7d0; }
 #toast-container.toast--success .toast-icon { color: #4ade80; }
-
-#toast-container.toast--warning {
-    background: rgba(120, 53, 15, 0.92);
-    border-color: rgba(251, 146, 60, 0.40);
-    color: #fed7aa;
-}
+#toast-container.toast--warning { background: rgba(120, 53, 15, 0.92); border-color: rgba(251, 146, 60, 0.40); color: #fed7aa; }
 #toast-container.toast--warning .toast-icon { color: #fb923c; }
+#toast-container.toast--danger  { background: rgba(127, 29, 29, 0.92); border-color: rgba(239, 68, 68, 0.40); color: #fecaca; }
+#toast-container.toast--danger .toast-icon  { color: #ef4444; }
+#toast-container.toast--info    { background: rgba(30, 58, 138, 0.92); border-color: rgba(96, 165, 250, 0.40); color: #bfdbfe; }
+#toast-container.toast--info .toast-icon    { color: #60a5fa; }
 
-#toast-container.toast--danger {
-    background: rgba(127, 29, 29, 0.92);
-    border-color: rgba(239, 68, 68, 0.40);
-    color: #fecaca;
-}
-#toast-container.toast--danger .toast-icon { color: #ef4444; }
-
-#toast-container.toast--info {
-    background: rgba(30, 58, 138, 0.92);
-    border-color: rgba(96, 165, 250, 0.40);
-    color: #bfdbfe;
-}
-#toast-container.toast--info .toast-icon { color: #60a5fa; }
-
-/* ── Overlay de chargement ── */
+/*  Overlay de chargement  */
 #loading-overlay {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -224,19 +266,8 @@ body {
 #loading-overlay img { width: clamp(300px, 50vw, 500px); }
 #loading-overlay.hidden { opacity: 0; pointer-events: none; }
 
-/* ─────────────────────────────────────────
-   Dashboard
-───────────────────────────────────────── */
-#dashboard {
-    flex: 0 0 280px;
-    padding: 16px;
-    background: var(--color-bg-dashboard);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
+/* Responsive */
+ 
 @media (max-width: 1023px) {
     body { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; }
     #canvas-zone {
@@ -244,10 +275,14 @@ body {
         flex: none; width: 100%; height: 60vw;
         max-height: 520px; min-height: 300px;
     }
+    /* Sidebar toujours visible en mobile — toggle masqué */
+    #sidebar-toggle { display: none; }
     #dashboard {
-        flex: none; width: 100%;
-        display: grid; grid-template-columns: 1fr 1fr;
-        gap: 12px; padding: 16px;
+        flex: none !important; width: 100% !important; flex-basis: auto !important;
+        display: grid !important; grid-template-columns: 1fr 1fr;
+        gap: 12px; padding: 16px !important;
+        opacity: 1 !important; pointer-events: auto !important;
+        overflow: visible !important;
     }
     #dashboard > div:first-child { grid-column: 1 / -1; }
 }
@@ -258,14 +293,15 @@ body {
         border-right: none; border-bottom: 2px solid var(--color-border-subtle);
         height: 75vw; max-height: 400px; min-height: 220px;
     }
-    #dashboard { display: flex; flex-direction: column; gap: 12px; padding: 12px; width: 100%; }
+    #dashboard { display: flex !important; flex-direction: column; gap: 12px; padding: 12px !important; width: 100% !important; }
 }
 
-@media (min-width: 1440px) { #dashboard { flex: 0 0 320px; } }
+@media (min-width: 1440px) {
+    :root { --sidebar-width: 320px; }
+}
 
-/* ─────────────────────────────────────────
-   Composants
-───────────────────────────────────────── */
+/* Composants */
+ 
 h2 { color: var(--color-accent); font-size: clamp(15px, 2vw, 20px); }
 .section { background: var(--color-bg-section); border-radius: 8px; padding: 12px; }
 
@@ -360,16 +396,8 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 .stat-item:last-child { margin-bottom: 0; }
 .stat-label { font-size: clamp(11px, 1.4vw, 13px); margin-bottom: 6px; }
 
-.stat-bar-bg {
-    background: var(--color-bg-deep);
-    height: 9px; border-radius: 5px;
-    overflow: visible; position: relative;
-}
-.stat-bar {
-    height: 9px; border-radius: 5px; width: 0%;
-    transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative; overflow: visible;
-}
+.stat-bar-bg { background: var(--color-bg-deep); height: 9px; border-radius: 5px; overflow: visible; position: relative; }
+.stat-bar { height: 9px; border-radius: 5px; width: 0%; transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: visible; }
 .stat-bar-value {
     position: absolute; left: calc(100% + 6px); top: 50%;
     transform: translateY(-50%);
@@ -386,9 +414,9 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 .donut-legend-dot   { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .donut-legend-pct   { margin-left: auto; font-weight: 600; font-size: 12px; min-width: 32px; text-align: right; }
 
-/* ─────────────────────────────────────────
+/* 
    Mode clair — palette WCAG AA
-───────────────────────────────────────── */
+ */
 body.light {
     --color-bg-app:       #f8fafc;
     --color-bg-dashboard: #f1f5f9;
@@ -419,23 +447,23 @@ body.light {
     --color-overlay-border: #94a3b8;
 }
 
-body.light button:not(.speed-preset):not(#btn-theme) { color: #ffffff; }
+body.light button:not(.speed-preset):not(#btn-theme):not(#sidebar-toggle) { color: #ffffff; }
+body.light #sidebar-toggle { background: var(--color-bg-section); border-color: var(--color-border-panel); color: var(--color-text-hint); }
+body.light #sidebar-toggle:hover { background: var(--color-bg-deep); color: var(--color-text-primary); }
 body.light #status { color: #15803d !important; }
 body.light .section { box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05); }
 body.light kbd { background: var(--color-bg-deep) !important; color: var(--color-text-hint); border: 1px solid var(--color-border-subtle); }
-
-/* Toast en mode clair : fond légèrement plus opaque pour la lisibilité */
 body.light #toast-container.toast--success { background: rgba(20, 83, 45, 0.95); }
 body.light #toast-container.toast--warning { background: rgba(120, 53, 15, 0.95); }
 body.light #toast-container.toast--danger  { background: rgba(127, 29, 29, 0.95); }
 body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95); }
 
-/* ── Scrollbar ── */
+/*  Scrollbar  */
 #dashboard::-webkit-scrollbar       { width: 4px; }
 #dashboard::-webkit-scrollbar-track { background: transparent; }
 #dashboard::-webkit-scrollbar-thumb { background: var(--color-scrollbar); border-radius: 2px; }
 
-/* ── Animations ── */
+/*  Animations d'entrée  */
 @keyframes fadeUp   { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeLeft { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
 
@@ -456,7 +484,6 @@ body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95)
 
     <canvas id="traffic-canvas"></canvas>
 
-    <!-- Tooltip route -->
     <div id="route-tooltip">
         <div class="tt-title" id="tt-title">Route</div>
         <div class="tt-state">
@@ -465,13 +492,18 @@ body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95)
         </div>
     </div>
 
-    <!-- Toast notifications — contenu injecté par JS -->
     <div id="toast-container"></div>
+
+    <button id="sidebar-toggle" title="Réduire / afficher le panneau  [D]">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+        </svg>
+    </button>
 </div>
 
 <div id="dashboard">
 
-    <!-- En-tête -->
     <div style="display:flex; align-items:center; justify-content:space-between;">
         <h2>🚦 Simurba</h2>
         <div style="display:flex; align-items:center; gap:8px;">
@@ -485,7 +517,6 @@ body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95)
         </div>
     </div>
 
-    <!-- Section 1 : Contrôles -->
     <div class="section">
         <p class="section-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -531,11 +562,11 @@ body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95)
             ⌨️
             <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">Espace</kbd> pause/play &nbsp;
             <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">R</kbd> reset &nbsp;
-            <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">+/-</kbd> vitesse
+            <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">+/-</kbd> vitesse &nbsp;
+            <kbd style="background:var(--color-bg-deep); border-radius:3px; padding:1px 5px; font-size:10px;">D</kbd> panneau
         </p>
     </div>
 
-    <!-- Section 2 : Horloge -->
     <div class="section">
         <p class="section-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -547,7 +578,6 @@ body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95)
         <p class="clock-sub">mm:ss écoulées</p>
     </div>
 
-    <!-- Section 3 : Densité globale -->
     <div class="section">
         <p class="section-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -577,7 +607,6 @@ body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95)
         </div>
     </div>
 
-    <!-- Section 4 : Trafic en direct -->
     <div class="section">
         <p class="section-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -629,8 +658,36 @@ body.light #toast-container.toast--info    { background: rgba(30, 58, 138, 0.95)
         </div>
     </div>
 
-</div><!-- /dashboard -->
+</div><script src="{% static 'traffic/js/simulation.js' %}"></script>
 
-<script src="{% static 'traffic/js/simulation.js' %}"></script>
+<script>
+// Toggle sidebar 
+// IIFE isolé — ne modifie rien dans simulation.js.
+// localStorage persiste l'état entre les rechargements.
+(function () {
+    const btn  = document.getElementById('sidebar-toggle');
+    const body = document.body;
+    const KEY  = 'simurba_sidebar_collapsed';
+
+    // Restaure l'état sauvegardé immédiatement (avant le premier paint)
+    if (localStorage.getItem(KEY) === '1') {
+        body.classList.add('sidebar-collapsed');
+    }
+
+    function toggle() {
+        const collapsed = body.classList.toggle('sidebar-collapsed');
+        localStorage.setItem(KEY, collapsed ? '1' : '0');
+    }
+
+    btn.addEventListener('click', toggle);
+
+    // Raccourci D (Dashboard) — cohérent avec les autres raccourcis
+    document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT') return;
+        if (e.key === 'd' || e.key === 'D') toggle();
+    });
+}());
+</script>
+
 </body>
 </html>
