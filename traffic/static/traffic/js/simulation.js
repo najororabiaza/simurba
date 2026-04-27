@@ -4,16 +4,14 @@ canvas.width = 750;
 canvas.height = 650;
 
 // Chargement des images
-const bgImg = new Image();
-bgImg.src = '/static/traffic/img/backgroundGrass.jpg';
-
-const carsImg = new Image();
-carsImg.src = '/static/traffic/img/bk_cars1.png';
-
-const tlRedImg = new Image();
-tlRedImg.src = '/static/traffic/img/trafficLight_red.png';
-
+const bgImg     = new Image();
+const carsImg   = new Image();
+const tlRedImg  = new Image();
 const tlGreenImg = new Image();
+
+bgImg.src      = '/static/traffic/img/backgroundGrass.jpg';
+carsImg.src    = '/static/traffic/img/bk_cars1.png';
+tlRedImg.src   = '/static/traffic/img/trafficLight_red.png';
 tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
 
 // Sprites — bk_cars1.png
@@ -36,7 +34,7 @@ const nodes = [
 ];
 
 const stateColors = { fluide: '#4ade80', ralenti: '#fb923c', bouchon: '#ef4444' };
-const stateLabels  = { fluide: 'Fluide', ralenti: 'Ralenti', bouchon: 'Bouchon' };
+const stateLabels = { fluide: 'Fluide', ralenti: 'Ralenti', bouchon: 'Bouchon' };
 
 const roads = [
     { from: nodes[0], to: nodes[1], state: 'fluide',  name: 'Route 1 — N→E (haut)'    },
@@ -55,9 +53,9 @@ const roads = [
 
 const vehicles = roads.map(road => ({
     road,
-    progress: Math.random(),
+    progress:  Math.random(),
     baseSpeed: 0.002 + Math.random() * 0.003,
-    sprite: carSprites[Math.floor(Math.random() * carSprites.length)],
+    sprite:    carSprites[Math.floor(Math.random() * carSprites.length)],
 }));
 
 const trafficLights = nodes.map(node => ({
@@ -66,20 +64,110 @@ const trafficLights = nodes.map(node => ({
     timer: Math.floor(Math.random() * 200),
 }));
 
+
+// ─────────────────────────────────────────────────────────────
+//  MARKOV — appel API vers Django
+//
+//  Cette fonction envoie les états actuels des routes à Django,
+//  Django applique la matrice de Markov et retourne les nouveaux états.
+//  On met ensuite à jour road.state pour chaque route.
+//
+//  Elle est appelée toutes les 2 secondes via setInterval.
+// ─────────────────────────────────────────────────────────────
+
+//  On construit le dictionnaire des états actuels à envoyer
+//  Format : { "0": "fluide", "1": "ralenti", ... }
+function getEtatsActuels() {
+    const etats = {};
+
+    // On parcourt chaque route et on note son état actuel
+    roads.forEach((road, index) => {
+        etats[index] = road.state;
+    });
+
+    return etats;
+}
+
+
+//  On applique les nouveaux états reçus de Django sur les routes
+//  Format reçu : { "0": "fluide", "1": "bouchon", ... }
+function appliquerNouveauxEtats(nouveauxEtats) {
+
+    // On parcourt chaque route
+    roads.forEach((road, index) => {
+
+        // On récupère le nouvel état pour cette route (clé en string)
+        const nouvelEtat = nouveauxEtats[String(index)];
+
+        // Si Django a bien retourné un état pour cette route, on le met à jour
+        if (nouvelEtat) {
+            road.state = nouvelEtat;
+        }
+    });
+}
+
+
+//  Appel POST vers /api/tick/ — envoie les états actuels, reçoit les nouveaux
+async function appellerTick() {
+
+    // On ne fait rien si la simulation est arrêtée
+    if (!running) return;
+
+    try {
+        // On envoie les états actuels au serveur Django
+        const reponse = await fetch('/api/tick/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+
+            // On convertit le dictionnaire en JSON pour l'envoyer
+            body: JSON.stringify({ etats: getEtatsActuels() }),
+        });
+
+        // On lit la réponse JSON retournée par Django
+        const donnees = await reponse.json();
+
+        // On met à jour les états des routes avec les valeurs calculées par Markov
+        appliquerNouveauxEtats(donnees.etats);
+
+    } catch (erreur) {
+        // En cas d'erreur réseau, on affiche dans la console mais on ne plante pas
+        console.warn('Tick Markov échoué :', erreur);
+    }
+}
+
+//  On appelle le tick toutes les 2 secondes (2000 ms)
+//  C'est l'intervalle auquel Markov fait évoluer les états des routes
+const INTERVALLE_TICK_MS = 2000;
+let tickInterval = null;
+
+function demarrerTick() {
+    // On évite de créer plusieurs intervalles en parallèle
+    if (tickInterval !== null) return;
+
+    // setInterval appelle appellerTick() toutes les 2 secondes
+    tickInterval = setInterval(appellerTick, INTERVALLE_TICK_MS);
+}
+
+function arreterTick() {
+    // On arrête l'intervalle et on remet la variable à null
+    if (tickInterval !== null) {
+        clearInterval(tickInterval);
+        tickInterval = null;
+    }
+}
+
+
 // Toast — système de notifications overlay canvas
 const toastContainer = document.getElementById('toast-container');
 let toastTimerId = null;
 
 function showToast(message, type = 'info', duration = 2500) {
-    if (toastTimerId !== null) {
-        clearTimeout(toastTimerId);
-        toastTimerId = null;
-    }
+    if (toastTimerId !== null) { clearTimeout(toastTimerId); toastTimerId = null; }
 
     const icons = { info: '●', success: '✓', warning: '⏸', danger: '⏹' };
 
-    toastContainer.innerHTML  = '';
-    toastContainer.className  = 'toast-visible toast--' + type;
+    toastContainer.innerHTML = '';
+    toastContainer.className = 'toast-visible toast--' + type;
 
     const icon = document.createElement('span');
     icon.className   = 'toast-icon';
@@ -96,15 +184,16 @@ function showToast(message, type = 'info', duration = 2500) {
         toastContainer.classList.remove('toast-visible');
         toastContainer.classList.add('toast-hiding');
         setTimeout(() => {
-            toastContainer.className  = '';
-            toastContainer.innerHTML  = '';
+            toastContainer.className = '';
+            toastContainer.innerHTML = '';
             toastTimerId = null;
         }, 300);
     }, duration);
 }
 
+
 // Contrôle de vitesse
-let running = false;
+let running     = false;
 let animationId = null;
 
 let speedFactor = 1;
@@ -126,7 +215,8 @@ presetBtns.forEach(btn => {
     btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
 });
 
-// Horloge
+
+// Horloge de simulation
 let simSeconds = 0;
 let frameAcc   = 0;
 const FPS_REF  = 60;
@@ -139,7 +229,8 @@ function updateClock() {
     document.getElementById('clock').textContent = mm + ':' + ss;
 }
 
-// --- BOUTONS ET CONTRÔLES D'ÉTAT ---
+
+// Boutons et contrôles d'état
 const btnTogglePlay = document.getElementById('btn-toggle-play');
 const btnReset      = document.getElementById('btn-reset');
 const btnStop       = document.getElementById('btn-stop');
@@ -148,11 +239,10 @@ function setButtons(state) {
     if (state === 'running') {
         btnTogglePlay.innerHTML = '⏸ Pauser';
         btnTogglePlay.style.background = 'var(--color-btn-pause)';
-    } else { // 'paused' ou 'stopped'
+    } else {
         btnTogglePlay.innerHTML = '▶ Démarrer';
         btnTogglePlay.style.background = 'var(--color-btn-start)';
     }
-    
     btnReset.disabled = false;
     btnStop.disabled  = (state === 'stopped');
 }
@@ -165,7 +255,8 @@ function setStatus(text, color, paused = false) {
     dotEl.className = paused ? 'status-dot paused' : 'status-dot';
 }
 
-// Écran d'arrêt
+
+// Écran d'arrêt — affiché sur le canvas quand la simulation est stoppée
 function drawStopScreen() {
     const W = canvas.width, H = canvas.height;
     const grad = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * 0.75);
@@ -226,7 +317,8 @@ function drawStopScreen() {
     ctx.textBaseline = 'alphabetic';
 }
 
-// TOOLTIP
+
+// Tooltip au survol des routes
 const tooltip     = document.getElementById('route-tooltip');
 const ttTitle     = document.getElementById('tt-title');
 const ttDot       = document.getElementById('tt-dot');
@@ -253,7 +345,10 @@ function screenToCanvas(screenX, screenY) {
         scale   = rect.height / canvas.height;
         offsetX = (canvas.width - rect.width / scale) / 2;
     }
-    return { x: (screenX - rect.left) / scale + offsetX, y: (screenY - rect.top) / scale + offsetY };
+    return {
+        x: (screenX - rect.left) / scale + offsetX,
+        y: (screenY - rect.top)  / scale + offsetY,
+    };
 }
 
 canvas.addEventListener('mousemove', (e) => {
@@ -283,7 +378,8 @@ canvas.addEventListener('mousemove', (e) => {
 });
 canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
-// DONUT
+
+// Donut — graphique de densité globale
 const donutCanvas = document.getElementById('donut-canvas');
 const dCtx        = donutCanvas.getContext('2d');
 
@@ -328,7 +424,8 @@ function drawDonut(counts, total) {
     dCtx.fillText(total, cx, cy);
 }
 
-// Dessin canvas principal
+
+// Dessin du canvas principal
 function drawBackground() {
     if (bgImg.complete) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
@@ -360,7 +457,6 @@ function drawRoundabouts() {
         ctx.strokeStyle = 'rgba(40, 40, 40, 0.50)';
         ctx.lineWidth   = 2.5;
         ctx.stroke();
-
         ctx.beginPath();
         ctx.arc(node.x, node.y, 11, 0, Math.PI * 2);
         ctx.fillStyle   = 'rgba(55, 130, 55, 0.65)';
@@ -415,7 +511,8 @@ function drawVehicles() {
     });
 }
 
-// Mises à jour logiques
+
+// Mises à jour logiques à chaque frame
 function updateTrafficLights() {
     trafficLights.forEach(tl => {
         tl.timer += speedFactor;
@@ -442,8 +539,8 @@ function updateDashboard() {
 
     const bars = [
         { bar: 'bar-fluide',  tip: 'tip-fluide',  count: counts.fluide  },
-        { bar: 'bar-ralenti', tip: 'tip-ralenti', count: counts.ralenti },
-        { bar: 'bar-bouchon', tip: 'tip-bouchon', count: counts.bouchon },
+        { bar: 'bar-ralenti', tip: 'tip-ralenti',  count: counts.ralenti },
+        { bar: 'bar-bouchon', tip: 'tip-bouchon',  count: counts.bouchon },
     ];
     bars.forEach(({ bar, tip, count }) => {
         const pct   = total > 0 ? count / total * 100 : 0;
@@ -461,10 +558,11 @@ function updateDashboard() {
     drawDonut(counts, total);
 }
 
-// Boucle principale
+
+// Boucle principale — appelée 60 fois par seconde
 function loop() {
-    // LA LIGNE MAGIQUE : si running est faux, on coupe tout immédiatement !
-    if (!running) return; 
+    // Si la simulation est arrêtée, on ne fait rien
+    if (!running) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
@@ -476,27 +574,33 @@ function loop() {
     updateTrafficLights();
     updateDashboard();
     updateClock();
-    
+
     animationId = requestAnimationFrame(loop);
 }
 
-// Fonction centrale pour basculer entre lecture et pause
+
+// Bascule entre lecture et pause
 function togglePlayPause() {
     if (running) {
+        // On arrête la simulation et le tick Markov
         running = false;
         cancelAnimationFrame(animationId);
         animationId = null;
+        arreterTick();
         setStatus('en pause', '#fb923c', true);
         setButtons('paused');
         showToast('Simulation en pause', 'warning');
     } else {
+        // On démarre la simulation et le tick Markov
         running = true;
         setStatus('en cours...', '#4ade80', false);
         setButtons('running');
+        demarrerTick();
         showToast('Simulation démarrée', 'success');
         loop();
     }
 }
+
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
@@ -513,10 +617,12 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Événements boutons interactifs
+
+// Événements des boutons
 btnTogglePlay.addEventListener('click', togglePlayPause);
 
 btnReset.addEventListener('click', () => {
+    // On remet les véhicules et l'horloge à zéro
     vehicles.forEach(v => { v.progress = 0; });
     simSeconds = 0;
     frameAcc   = 0;
@@ -524,13 +630,22 @@ btnReset.addEventListener('click', () => {
     setStatus('en cours...', '#4ade80', false);
     setButtons('running');
     showToast('Réinitialisé — ' + vehicles.length + ' véhicules remis à zéro', 'info');
-    if (!running) { running = true; loop(); }
+
+    // Si la simulation était arrêtée, on redémarre aussi le tick Markov
+    if (!running) {
+        running = true;
+        demarrerTick();
+        loop();
+    }
 });
 
 btnStop.addEventListener('click', () => {
+    // On arrête tout : animation + tick Markov
     running = false;
     cancelAnimationFrame(animationId);
     animationId = null;
+    arreterTick();
+
     vehicles.forEach(v => { v.progress = 0; });
     simSeconds = 0;
     frameAcc   = 0;
@@ -546,7 +661,8 @@ document.getElementById('btn-theme').addEventListener('click', () => {
     document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';
 });
 
-// Lancement
+
+// Lancement — on attend que les 4 images soient chargées
 let imagesLoaded = 0;
 const totalImages = 4;
 const loadStart   = Date.now();
@@ -561,6 +677,10 @@ const loadStart   = Date.now();
                 overlay.classList.add('hidden');
                 setTimeout(() => overlay.remove(), 400);
                 setButtons('running');
+
+                // On démarre la simulation ET le tick Markov en même temps
+                running = true;
+                demarrerTick();
                 loop();
             }, remaining);
         }
