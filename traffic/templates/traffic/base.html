@@ -457,6 +457,116 @@ body.light #toast-container.toast--info  { background: rgba(30, 58, 138, 0.95); 
 #dashboard::-webkit-scrollbar-track { background: transparent; }
 #dashboard::-webkit-scrollbar-thumb { background: var(--color-scrollbar); border-radius: 2px; }
 
+/* ── Files d'attente ── */
+.queue-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 4px;
+}
+.queue-cell {
+    background: var(--color-bg-deep);
+    border-radius: 6px;
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--color-text-muted);
+    border: 1px solid transparent;
+    transition: border-color 0.3s;
+}
+.queue-cell .queue-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text-clock);
+    display: block;
+    line-height: 1.2;
+}
+.queue-cell.saturee {
+    border-color: var(--color-state-bouchon);
+}
+.queue-cell.chargee {
+    border-color: var(--color-state-ralenti);
+}
+.queue-stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-bg-deep);
+}
+.queue-stat-val {
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+/* ── Scénario Monte Carlo ── */
+.scenario-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 4px;
+}
+.scenario-btn {
+    padding: 7px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--color-bg-deep);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    text-align: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.scenario-btn:hover { background: var(--color-bg-section); color: var(--color-text-primary); }
+.scenario-btn.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+}
+.risque-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-bg-deep);
+}
+#risque-bouchon {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--color-state-bouchon);
+}
+
+/* ── Optimisation des feux ── */
+.optim-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-bg-deep);
+}
+.optim-row:last-child { border-bottom: none; }
+.optim-val {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--color-text-primary);
+}
+.optim-gain {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--color-state-fluide);
+}
+
 /* Animations d'entrée */
 @keyframes fadeUp  { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeLeft { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
@@ -467,6 +577,9 @@ body.light #toast-container.toast--info  { background: rgba(30, 58, 138, 0.95); 
 #dashboard > div:nth-child(3) { animation: fadeLeft 0.8s ease both; animation-delay: 0.60s; }
 #dashboard > div:nth-child(4) { animation: fadeLeft 0.8s ease both; animation-delay: 0.75s; }
 #dashboard > div:nth-child(5) { animation: fadeLeft 0.8s ease both; animation-delay: 0.90s; }
+#dashboard > div:nth-child(6) { animation: fadeLeft 0.8s ease both; animation-delay: 1.00s; }
+#dashboard > div:nth-child(7) { animation: fadeLeft 0.8s ease both; animation-delay: 1.10s; }
+#dashboard > div:nth-child(8) { animation: fadeLeft 0.8s ease both; animation-delay: 1.20s; }
 </style>
 </head>
 <body>
@@ -648,6 +761,86 @@ Trafic en direct
 </div>
 </div>
 </div>
+</div>
+
+<!-- Section 5 : Files d'attente M/M/1 -->
+<div class="section">
+    <p class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        Files d'attente
+    </p>
+
+    <!-- Grille 3x3 — une cellule par intersection -->
+    <div class="queue-grid" id="queue-grid">
+        <div class="queue-cell"><span class="queue-num" id="queue-0">0</span>Nœud 1</div>
+        <div class="queue-cell"><span class="queue-num" id="queue-1">0</span>Nœud 2</div>
+        <div class="queue-cell"><span class="queue-num" id="queue-2">0</span>Nœud 3</div>
+        <div class="queue-cell"><span class="queue-num" id="queue-3">0</span>Nœud 4</div>
+        <div class="queue-cell"><span class="queue-num" id="queue-4">0</span>Nœud 5</div>
+        <div class="queue-cell"><span class="queue-num" id="queue-5">0</span>Nœud 6</div>
+        <div class="queue-cell"><span class="queue-num" id="queue-6">0</span>Nœud 7</div>
+        <div class="queue-cell"><span class="queue-num" id="queue-7">0</span>Nœud 8</div>
+        <div class="queue-cell"><span class="queue-num" id="queue-8">0</span>Nœud 9</div>
+    </div>
+
+    <div class="queue-stat-row">
+        <span>Intersection max</span>
+        <span class="queue-stat-val" id="inter-max">—</span>
+    </div>
+    <div class="queue-stat-row">
+        <span>Attente moyenne Wq</span>
+        <span class="queue-stat-val" id="wq-moyen">—</span>
+    </div>
+</div>
+
+<!-- Section 6 : Scénario Monte Carlo -->
+<div class="section">
+    <p class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        Scénario Monte Carlo
+    </p>
+
+    <!-- Boutons pour choisir un scénario -->
+    <div class="scenario-grid">
+        <button class="scenario-btn active" data-scenario="normal">Normal</button>
+        <button class="scenario-btn" data-scenario="heure_de_pointe">Heure de pointe</button>
+        <button class="scenario-btn" data-scenario="nuit">Nuit</button>
+        <button class="scenario-btn" data-scenario="accident">Accident</button>
+    </div>
+
+    <div class="risque-row">
+        <span>Risque de bouchon estimé</span>
+        <span id="risque-bouchon">—</span>
+    </div>
+</div>
+
+<!-- Section 7 : Optimisation des feux -->
+<div class="section">
+    <p class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Optimisation des feux
+    </p>
+
+    <div class="optim-row">
+        <span>Durée rouge optimale</span>
+        <span class="optim-val" id="optim-rouge">—</span>
+    </div>
+    <div class="optim-row">
+        <span>Durée vert optimale</span>
+        <span class="optim-val" id="optim-vert">—</span>
+    </div>
+    <div class="optim-row">
+        <span>Gain de fluidité</span>
+        <span class="optim-gain" id="optim-gain">—</span>
+    </div>
 </div>
 
 </div><script src="{% static 'traffic/js/simulation.js' %}"></script>

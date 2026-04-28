@@ -461,10 +461,165 @@ function updateDashboard() {
     drawDonut(counts, total);
 }
 
-// Boucle principale
+
+//  MARKOV — appel API vers Django toutes les 2 secondes
+
+
+//  Construit { "0": "fluide", "1": "ralenti", ... } depuis roads[]
+function getEtatsActuels() {
+    const etats = {};
+    roads.forEach((road, index) => { etats[index] = road.state; });
+    return etats;
+}
+
+//  Applique les nouveaux états Markov reçus de Django sur roads[]
+function appliquerNouveauxEtats(nouveauxEtats) {
+    roads.forEach((road, index) => {
+        const nouvelEtat = nouveauxEtats[String(index)];
+        if (nouvelEtat) road.state = nouvelEtat;
+    });
+}
+
+//  Met à jour le dashboard avec les files d'attente reçues de Django
+function mettreAJourFiles(files, interMax, wqMoyen) {
+
+    // On met à jour chaque cellule de la grille 3x3
+    for (let i = 0; i < 9; i++) {
+        const cellNum  = document.getElementById('queue-' + i);
+        const cellDiv  = cellNum ? cellNum.closest('.queue-cell') : null;
+        const valeur   = files[String(i)] || 0;
+
+        if (cellNum)  cellNum.textContent = valeur;
+
+        // On colore la cellule selon le niveau de saturation
+        if (cellDiv) {
+            cellDiv.classList.remove('saturee', 'chargee');
+            if (valeur >= 6)      cellDiv.classList.add('saturee');
+            else if (valeur >= 3) cellDiv.classList.add('chargee');
+        }
+    }
+
+    // On met à jour l'intersection max et le Wq moyen
+    const interMaxEl = document.getElementById('inter-max');
+    const wqMoyenEl  = document.getElementById('wq-moyen');
+    if (interMaxEl) interMaxEl.textContent = 'Nœud ' + (interMax.id + 1) + ' — ' + interMax.queue + ' veh.';
+    if (wqMoyenEl)  wqMoyenEl.textContent  = wqMoyen + ' s';
+}
+
+//  Met à jour la section optimisation des feux
+function mettreAJourOptimisation(optim) {
+    const rougeEl = document.getElementById('optim-rouge');
+    const vertEl  = document.getElementById('optim-vert');
+    const gainEl  = document.getElementById('optim-gain');
+
+    if (rougeEl) rougeEl.textContent = optim.duree_rouge + ' s';
+    if (vertEl)  vertEl.textContent  = optim.duree_vert  + ' s';
+    if (gainEl)  gainEl.textContent  = '+' + optim.gain_pourcent + '%';
+}
+
+//  Appel POST vers /api/tick/ — cœur de la simulation côté serveur
+async function appellerTick() {
+
+    // On ne fait rien si la simulation est arrêtée
+    if (!running) return;
+
+    try {
+        const reponse = await fetch('/api/tick/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ etats: getEtatsActuels() }),
+        });
+
+        const donnees = await reponse.json();
+
+        // Markov — on applique les nouveaux états sur les routes
+        appliquerNouveauxEtats(donnees.etats);
+
+        // Files d'attente — on met à jour la grille du dashboard
+        if (donnees.files) {
+            mettreAJourFiles(donnees.files, donnees.inter_max, donnees.wq_moyen);
+        }
+
+        // Optimisation — on met à jour les durées recommandées
+        if (donnees.optimisation) {
+            mettreAJourOptimisation(donnees.optimisation);
+        }
+
+    } catch (erreur) {
+        // Erreur réseau — on continue sans planter
+        console.warn('Tick API échoué :', erreur);
+    }
+}
+
+//  Le tick s'exécute toutes les 2 secondes
+const INTERVALLE_TICK_MS = 2000;
+let tickInterval = null;
+
+function demarrerTick() {
+    if (tickInterval !== null) return;
+    tickInterval = setInterval(appellerTick, INTERVALLE_TICK_MS);
+}
+
+function arreterTick() {
+    if (tickInterval !== null) {
+        clearInterval(tickInterval);
+        tickInterval = null;
+    }
+}
+
+
+
+//  MONTE CARLO — sélecteur de scénario
+
+
+//  Appel POST vers /api/scenario/ quand l'utilisateur choisit un scénario
+async function changerScenario(scenario) {
+
+    try {
+        const reponse = await fetch('/api/scenario/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ scenario: scenario }),
+        });
+
+        const donnees = await reponse.json();
+
+        // On applique les nouveaux états générés par Monte Carlo
+        appliquerNouveauxEtats(donnees.etats);
+
+        // On met à jour le risque de bouchon estimé
+        const risqueEl = document.getElementById('risque-bouchon');
+        if (risqueEl && donnees.risque_bouchon !== undefined) {
+            risqueEl.textContent = Math.round(donnees.risque_bouchon * 100) + '%';
+        }
+
+        showToast('Scénario : ' + donnees.info_scenario.nom, 'info');
+
+    } catch (erreur) {
+        console.warn('Scénario API échoué :', erreur);
+    }
+}
+
+//  Événements sur les boutons de scénario
+document.querySelectorAll('.scenario-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+
+        // On retire la classe active de tous les boutons
+        document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+
+        // On active le bouton cliqué
+        btn.classList.add('active');
+
+        // On appelle l'API Monte Carlo
+        changerScenario(btn.dataset.scenario);
+    });
+});
+
+
+//  Boucle principale
+
 function loop() {
-    // LA LIGNE MAGIQUE : si running est faux, on coupe tout immédiatement !
-    if (!running) return; 
+    if (!running) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
@@ -476,23 +631,29 @@ function loop() {
     updateTrafficLights();
     updateDashboard();
     updateClock();
-    
+
     animationId = requestAnimationFrame(loop);
 }
 
-// Fonction centrale pour basculer entre lecture et pause
+
+//  Contrôles
+
 function togglePlayPause() {
     if (running) {
+        // Pause — on arrête l'animation ET le tick Markov
         running = false;
         cancelAnimationFrame(animationId);
         animationId = null;
+        arreterTick();
         setStatus('en pause', '#fb923c', true);
         setButtons('paused');
         showToast('Simulation en pause', 'warning');
     } else {
+        // Reprise — on redémarre l'animation ET le tick Markov
         running = true;
         setStatus('en cours...', '#4ade80', false);
         setButtons('running');
+        demarrerTick();
         showToast('Simulation démarrée', 'success');
         loop();
     }
@@ -513,7 +674,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Événements boutons interactifs
 btnTogglePlay.addEventListener('click', togglePlayPause);
 
 btnReset.addEventListener('click', () => {
@@ -524,13 +684,19 @@ btnReset.addEventListener('click', () => {
     setStatus('en cours...', '#4ade80', false);
     setButtons('running');
     showToast('Réinitialisé — ' + vehicles.length + ' véhicules remis à zéro', 'info');
-    if (!running) { running = true; loop(); }
+    if (!running) {
+        running = true;
+        demarrerTick();
+        loop();
+    }
 });
 
 btnStop.addEventListener('click', () => {
+    // On arrête tout : animation + tick Markov
     running = false;
     cancelAnimationFrame(animationId);
     animationId = null;
+    arreterTick();
     vehicles.forEach(v => { v.progress = 0; });
     simSeconds = 0;
     frameAcc   = 0;
@@ -546,7 +712,9 @@ document.getElementById('btn-theme').addEventListener('click', () => {
     document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';
 });
 
-// Lancement
+
+//  Lancement — attend que les 4 images soient chargées
+
 let imagesLoaded = 0;
 const totalImages = 4;
 const loadStart   = Date.now();
@@ -561,6 +729,10 @@ const loadStart   = Date.now();
                 overlay.classList.add('hidden');
                 setTimeout(() => overlay.remove(), 400);
                 setButtons('running');
+
+                // On démarre la simulation ET le tick Markov
+                running = true;
+                demarrerTick();
                 loop();
             }, remaining);
         }
