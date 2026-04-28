@@ -4,14 +4,16 @@ canvas.width = 750;
 canvas.height = 650;
 
 // Chargement des images
-const bgImg     = new Image();
-const carsImg   = new Image();
-const tlRedImg  = new Image();
-const tlGreenImg = new Image();
+const bgImg = new Image();
+bgImg.src = '/static/traffic/img/backgroundGrass.jpg';
 
-bgImg.src      = '/static/traffic/img/backgroundGrass.jpg';
-carsImg.src    = '/static/traffic/img/bk_cars1.png';
-tlRedImg.src   = '/static/traffic/img/trafficLight_red.png';
+const carsImg = new Image();
+carsImg.src = '/static/traffic/img/bk_cars1.png';
+
+const tlRedImg = new Image();
+tlRedImg.src = '/static/traffic/img/trafficLight_red.png';
+
+const tlGreenImg = new Image();
 tlGreenImg.src = '/static/traffic/img/trafficLight_green.png';
 
 // Sprites — bk_cars1.png
@@ -34,7 +36,7 @@ const nodes = [
 ];
 
 const stateColors = { fluide: '#4ade80', ralenti: '#fb923c', bouchon: '#ef4444' };
-const stateLabels = { fluide: 'Fluide', ralenti: 'Ralenti', bouchon: 'Bouchon' };
+const stateLabels  = { fluide: 'Fluide', ralenti: 'Ralenti', bouchon: 'Bouchon' };
 
 const roads = [
     { from: nodes[0], to: nodes[1], state: 'fluide',  name: 'Route 1 — N→E (haut)'    },
@@ -53,9 +55,9 @@ const roads = [
 
 const vehicles = roads.map(road => ({
     road,
-    progress:  Math.random(),
+    progress: Math.random(),
     baseSpeed: 0.002 + Math.random() * 0.003,
-    sprite:    carSprites[Math.floor(Math.random() * carSprites.length)],
+    sprite: carSprites[Math.floor(Math.random() * carSprites.length)],
 }));
 
 const trafficLights = nodes.map(node => ({
@@ -64,110 +66,20 @@ const trafficLights = nodes.map(node => ({
     timer: Math.floor(Math.random() * 200),
 }));
 
-
-// ─────────────────────────────────────────────────────────────
-//  MARKOV — appel API vers Django
-//
-//  Cette fonction envoie les états actuels des routes à Django,
-//  Django applique la matrice de Markov et retourne les nouveaux états.
-//  On met ensuite à jour road.state pour chaque route.
-//
-//  Elle est appelée toutes les 2 secondes via setInterval.
-// ─────────────────────────────────────────────────────────────
-
-//  On construit le dictionnaire des états actuels à envoyer
-//  Format : { "0": "fluide", "1": "ralenti", ... }
-function getEtatsActuels() {
-    const etats = {};
-
-    // On parcourt chaque route et on note son état actuel
-    roads.forEach((road, index) => {
-        etats[index] = road.state;
-    });
-
-    return etats;
-}
-
-
-//  On applique les nouveaux états reçus de Django sur les routes
-//  Format reçu : { "0": "fluide", "1": "bouchon", ... }
-function appliquerNouveauxEtats(nouveauxEtats) {
-
-    // On parcourt chaque route
-    roads.forEach((road, index) => {
-
-        // On récupère le nouvel état pour cette route (clé en string)
-        const nouvelEtat = nouveauxEtats[String(index)];
-
-        // Si Django a bien retourné un état pour cette route, on le met à jour
-        if (nouvelEtat) {
-            road.state = nouvelEtat;
-        }
-    });
-}
-
-
-//  Appel POST vers /api/tick/ — envoie les états actuels, reçoit les nouveaux
-async function appellerTick() {
-
-    // On ne fait rien si la simulation est arrêtée
-    if (!running) return;
-
-    try {
-        // On envoie les états actuels au serveur Django
-        const reponse = await fetch('/api/tick/', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-
-            // On convertit le dictionnaire en JSON pour l'envoyer
-            body: JSON.stringify({ etats: getEtatsActuels() }),
-        });
-
-        // On lit la réponse JSON retournée par Django
-        const donnees = await reponse.json();
-
-        // On met à jour les états des routes avec les valeurs calculées par Markov
-        appliquerNouveauxEtats(donnees.etats);
-
-    } catch (erreur) {
-        // En cas d'erreur réseau, on affiche dans la console mais on ne plante pas
-        console.warn('Tick Markov échoué :', erreur);
-    }
-}
-
-//  On appelle le tick toutes les 2 secondes (2000 ms)
-//  C'est l'intervalle auquel Markov fait évoluer les états des routes
-const INTERVALLE_TICK_MS = 2000;
-let tickInterval = null;
-
-function demarrerTick() {
-    // On évite de créer plusieurs intervalles en parallèle
-    if (tickInterval !== null) return;
-
-    // setInterval appelle appellerTick() toutes les 2 secondes
-    tickInterval = setInterval(appellerTick, INTERVALLE_TICK_MS);
-}
-
-function arreterTick() {
-    // On arrête l'intervalle et on remet la variable à null
-    if (tickInterval !== null) {
-        clearInterval(tickInterval);
-        tickInterval = null;
-    }
-}
-
-
 // Toast — système de notifications overlay canvas
 const toastContainer = document.getElementById('toast-container');
 let toastTimerId = null;
 
 function showToast(message, type = 'info', duration = 2500) {
-    if (toastTimerId !== null) { clearTimeout(toastTimerId); toastTimerId = null; }
+    if (toastTimerId !== null) {
+        clearTimeout(toastTimerId);
+        toastTimerId = null;
+    }
 
     const icons = { info: '●', success: '✓', warning: '⏸', danger: '⏹' };
 
-    toastContainer.innerHTML = '';
-    toastContainer.className = 'toast-visible toast--' + type;
+    toastContainer.innerHTML  = '';
+    toastContainer.className  = 'toast-visible toast--' + type;
 
     const icon = document.createElement('span');
     icon.className   = 'toast-icon';
@@ -184,16 +96,15 @@ function showToast(message, type = 'info', duration = 2500) {
         toastContainer.classList.remove('toast-visible');
         toastContainer.classList.add('toast-hiding');
         setTimeout(() => {
-            toastContainer.className = '';
-            toastContainer.innerHTML = '';
+            toastContainer.className  = '';
+            toastContainer.innerHTML  = '';
             toastTimerId = null;
         }, 300);
     }, duration);
 }
 
-
 // Contrôle de vitesse
-let running     = false;
+let running = false;
 let animationId = null;
 
 let speedFactor = 1;
@@ -215,8 +126,7 @@ presetBtns.forEach(btn => {
     btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
 });
 
-
-// Horloge de simulation
+// Horloge
 let simSeconds = 0;
 let frameAcc   = 0;
 const FPS_REF  = 60;
@@ -229,8 +139,7 @@ function updateClock() {
     document.getElementById('clock').textContent = mm + ':' + ss;
 }
 
-
-// Boutons et contrôles d'état
+// --- BOUTONS ET CONTRÔLES D'ÉTAT ---
 const btnTogglePlay = document.getElementById('btn-toggle-play');
 const btnReset      = document.getElementById('btn-reset');
 const btnStop       = document.getElementById('btn-stop');
@@ -239,10 +148,11 @@ function setButtons(state) {
     if (state === 'running') {
         btnTogglePlay.innerHTML = '⏸ Pauser';
         btnTogglePlay.style.background = 'var(--color-btn-pause)';
-    } else {
+    } else { // 'paused' ou 'stopped'
         btnTogglePlay.innerHTML = '▶ Démarrer';
         btnTogglePlay.style.background = 'var(--color-btn-start)';
     }
+    
     btnReset.disabled = false;
     btnStop.disabled  = (state === 'stopped');
 }
@@ -255,8 +165,7 @@ function setStatus(text, color, paused = false) {
     dotEl.className = paused ? 'status-dot paused' : 'status-dot';
 }
 
-
-// Écran d'arrêt — affiché sur le canvas quand la simulation est stoppée
+// Écran d'arrêt
 function drawStopScreen() {
     const W = canvas.width, H = canvas.height;
     const grad = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * 0.75);
@@ -317,8 +226,7 @@ function drawStopScreen() {
     ctx.textBaseline = 'alphabetic';
 }
 
-
-// Tooltip au survol des routes
+// TOOLTIP
 const tooltip     = document.getElementById('route-tooltip');
 const ttTitle     = document.getElementById('tt-title');
 const ttDot       = document.getElementById('tt-dot');
@@ -345,10 +253,7 @@ function screenToCanvas(screenX, screenY) {
         scale   = rect.height / canvas.height;
         offsetX = (canvas.width - rect.width / scale) / 2;
     }
-    return {
-        x: (screenX - rect.left) / scale + offsetX,
-        y: (screenY - rect.top)  / scale + offsetY,
-    };
+    return { x: (screenX - rect.left) / scale + offsetX, y: (screenY - rect.top) / scale + offsetY };
 }
 
 canvas.addEventListener('mousemove', (e) => {
@@ -378,8 +283,7 @@ canvas.addEventListener('mousemove', (e) => {
 });
 canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
-
-// Donut — graphique de densité globale
+// DONUT
 const donutCanvas = document.getElementById('donut-canvas');
 const dCtx        = donutCanvas.getContext('2d');
 
@@ -424,8 +328,7 @@ function drawDonut(counts, total) {
     dCtx.fillText(total, cx, cy);
 }
 
-
-// Dessin du canvas principal
+// Dessin canvas principal
 function drawBackground() {
     if (bgImg.complete) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
@@ -457,6 +360,7 @@ function drawRoundabouts() {
         ctx.strokeStyle = 'rgba(40, 40, 40, 0.50)';
         ctx.lineWidth   = 2.5;
         ctx.stroke();
+
         ctx.beginPath();
         ctx.arc(node.x, node.y, 11, 0, Math.PI * 2);
         ctx.fillStyle   = 'rgba(55, 130, 55, 0.65)';
@@ -511,8 +415,7 @@ function drawVehicles() {
     });
 }
 
-
-// Mises à jour logiques à chaque frame
+// Mises à jour logiques
 function updateTrafficLights() {
     trafficLights.forEach(tl => {
         tl.timer += speedFactor;
@@ -539,8 +442,8 @@ function updateDashboard() {
 
     const bars = [
         { bar: 'bar-fluide',  tip: 'tip-fluide',  count: counts.fluide  },
-        { bar: 'bar-ralenti', tip: 'tip-ralenti',  count: counts.ralenti },
-        { bar: 'bar-bouchon', tip: 'tip-bouchon',  count: counts.bouchon },
+        { bar: 'bar-ralenti', tip: 'tip-ralenti', count: counts.ralenti },
+        { bar: 'bar-bouchon', tip: 'tip-bouchon', count: counts.bouchon },
     ];
     bars.forEach(({ bar, tip, count }) => {
         const pct   = total > 0 ? count / total * 100 : 0;
@@ -558,10 +461,166 @@ function updateDashboard() {
     drawDonut(counts, total);
 }
 
+// ─────────────────────────────────────────────────────────────
+//  MARKOV — appel API vers Django toutes les 2 secondes
+// ─────────────────────────────────────────────────────────────
 
-// Boucle principale — appelée 60 fois par seconde
+//  Construit { "0": "fluide", "1": "ralenti", ... } depuis roads[]
+function getEtatsActuels() {
+    const etats = {};
+    roads.forEach((road, index) => { etats[index] = road.state; });
+    return etats;
+}
+
+//  Applique les nouveaux états Markov reçus de Django sur roads[]
+function appliquerNouveauxEtats(nouveauxEtats) {
+    roads.forEach((road, index) => {
+        const nouvelEtat = nouveauxEtats[String(index)];
+        if (nouvelEtat) road.state = nouvelEtat;
+    });
+}
+
+//  Met à jour le dashboard avec les files d'attente reçues de Django
+function mettreAJourFiles(files, interMax, wqMoyen) {
+
+    // On met à jour chaque cellule de la grille 3x3
+    for (let i = 0; i < 9; i++) {
+        const cellNum  = document.getElementById('queue-' + i);
+        const cellDiv  = cellNum ? cellNum.closest('.queue-cell') : null;
+        const valeur   = files[String(i)] || 0;
+
+        if (cellNum)  cellNum.textContent = valeur;
+
+        // On colore la cellule selon le niveau de saturation
+        if (cellDiv) {
+            cellDiv.classList.remove('saturee', 'chargee');
+            if (valeur >= 6)      cellDiv.classList.add('saturee');
+            else if (valeur >= 3) cellDiv.classList.add('chargee');
+        }
+    }
+
+    // On met à jour l'intersection max et le Wq moyen
+    const interMaxEl = document.getElementById('inter-max');
+    const wqMoyenEl  = document.getElementById('wq-moyen');
+    if (interMaxEl) interMaxEl.textContent = 'Nœud ' + (interMax.id + 1) + ' — ' + interMax.queue + ' veh.';
+    if (wqMoyenEl)  wqMoyenEl.textContent  = wqMoyen + ' s';
+}
+
+//  Met à jour la section optimisation des feux
+function mettreAJourOptimisation(optim) {
+    const rougeEl = document.getElementById('optim-rouge');
+    const vertEl  = document.getElementById('optim-vert');
+    const gainEl  = document.getElementById('optim-gain');
+
+    if (rougeEl) rougeEl.textContent = optim.duree_rouge + ' s';
+    if (vertEl)  vertEl.textContent  = optim.duree_vert  + ' s';
+    if (gainEl)  gainEl.textContent  = '+' + optim.gain_pourcent + '%';
+}
+
+//  Appel POST vers /api/tick/ — cœur de la simulation côté serveur
+async function appellerTick() {
+
+    // On ne fait rien si la simulation est arrêtée
+    if (!running) return;
+
+    try {
+        const reponse = await fetch('/api/tick/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ etats: getEtatsActuels() }),
+        });
+
+        const donnees = await reponse.json();
+
+        // Markov — on applique les nouveaux états sur les routes
+        appliquerNouveauxEtats(donnees.etats);
+
+        // Files d'attente — on met à jour la grille du dashboard
+        if (donnees.files) {
+            mettreAJourFiles(donnees.files, donnees.inter_max, donnees.wq_moyen);
+        }
+
+        // Optimisation — on met à jour les durées recommandées
+        if (donnees.optimisation) {
+            mettreAJourOptimisation(donnees.optimisation);
+        }
+
+    } catch (erreur) {
+        // Erreur réseau — on continue sans planter
+        console.warn('Tick API échoué :', erreur);
+    }
+}
+
+//  Le tick s'exécute toutes les 2 secondes
+const INTERVALLE_TICK_MS = 2000;
+let tickInterval = null;
+
+function demarrerTick() {
+    if (tickInterval !== null) return;
+    tickInterval = setInterval(appellerTick, INTERVALLE_TICK_MS);
+}
+
+function arreterTick() {
+    if (tickInterval !== null) {
+        clearInterval(tickInterval);
+        tickInterval = null;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  MONTE CARLO — sélecteur de scénario
+// ─────────────────────────────────────────────────────────────
+
+//  Appel POST vers /api/scenario/ quand l'utilisateur choisit un scénario
+async function changerScenario(scenario) {
+
+    try {
+        const reponse = await fetch('/api/scenario/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ scenario: scenario }),
+        });
+
+        const donnees = await reponse.json();
+
+        // On applique les nouveaux états générés par Monte Carlo
+        appliquerNouveauxEtats(donnees.etats);
+
+        // On met à jour le risque de bouchon estimé
+        const risqueEl = document.getElementById('risque-bouchon');
+        if (risqueEl && donnees.risque_bouchon !== undefined) {
+            risqueEl.textContent = Math.round(donnees.risque_bouchon * 100) + '%';
+        }
+
+        showToast('Scénario : ' + donnees.info_scenario.nom, 'info');
+
+    } catch (erreur) {
+        console.warn('Scénario API échoué :', erreur);
+    }
+}
+
+//  Événements sur les boutons de scénario
+document.querySelectorAll('.scenario-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+
+        // On retire la classe active de tous les boutons
+        document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+
+        // On active le bouton cliqué
+        btn.classList.add('active');
+
+        // On appelle l'API Monte Carlo
+        changerScenario(btn.dataset.scenario);
+    });
+});
+
+
+// ─────────────────────────────────────────────────────────────
+//  Boucle principale
+// ─────────────────────────────────────────────────────────────
+
 function loop() {
-    // Si la simulation est arrêtée, on ne fait rien
     if (!running) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -579,10 +638,13 @@ function loop() {
 }
 
 
-// Bascule entre lecture et pause
+// ─────────────────────────────────────────────────────────────
+//  Contrôles
+// ─────────────────────────────────────────────────────────────
+
 function togglePlayPause() {
     if (running) {
-        // On arrête la simulation et le tick Markov
+        // Pause — on arrête l'animation ET le tick Markov
         running = false;
         cancelAnimationFrame(animationId);
         animationId = null;
@@ -591,7 +653,7 @@ function togglePlayPause() {
         setButtons('paused');
         showToast('Simulation en pause', 'warning');
     } else {
-        // On démarre la simulation et le tick Markov
+        // Reprise — on redémarre l'animation ET le tick Markov
         running = true;
         setStatus('en cours...', '#4ade80', false);
         setButtons('running');
@@ -600,7 +662,6 @@ function togglePlayPause() {
         loop();
     }
 }
-
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
@@ -617,12 +678,9 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-
-// Événements des boutons
 btnTogglePlay.addEventListener('click', togglePlayPause);
 
 btnReset.addEventListener('click', () => {
-    // On remet les véhicules et l'horloge à zéro
     vehicles.forEach(v => { v.progress = 0; });
     simSeconds = 0;
     frameAcc   = 0;
@@ -630,8 +688,6 @@ btnReset.addEventListener('click', () => {
     setStatus('en cours...', '#4ade80', false);
     setButtons('running');
     showToast('Réinitialisé — ' + vehicles.length + ' véhicules remis à zéro', 'info');
-
-    // Si la simulation était arrêtée, on redémarre aussi le tick Markov
     if (!running) {
         running = true;
         demarrerTick();
@@ -645,7 +701,6 @@ btnStop.addEventListener('click', () => {
     cancelAnimationFrame(animationId);
     animationId = null;
     arreterTick();
-
     vehicles.forEach(v => { v.progress = 0; });
     simSeconds = 0;
     frameAcc   = 0;
@@ -662,7 +717,10 @@ document.getElementById('btn-theme').addEventListener('click', () => {
 });
 
 
-// Lancement — on attend que les 4 images soient chargées
+// ─────────────────────────────────────────────────────────────
+//  Lancement — attend que les 4 images soient chargées
+// ─────────────────────────────────────────────────────────────
+
 let imagesLoaded = 0;
 const totalImages = 4;
 const loadStart   = Date.now();
@@ -678,7 +736,7 @@ const loadStart   = Date.now();
                 setTimeout(() => overlay.remove(), 400);
                 setButtons('running');
 
-                // On démarre la simulation ET le tick Markov en même temps
+                // On démarre la simulation ET le tick Markov
                 running = true;
                 demarrerTick();
                 loop();
