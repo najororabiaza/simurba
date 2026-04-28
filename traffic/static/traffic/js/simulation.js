@@ -461,9 +461,9 @@ function updateDashboard() {
     drawDonut(counts, total);
 }
 
-// ─────────────────────────────────────────────────────────────
+
 //  MARKOV — appel API vers Django toutes les 2 secondes
-// ─────────────────────────────────────────────────────────────
+
 
 //  Construit { "0": "fluide", "1": "ralenti", ... } depuis roads[]
 function getEtatsActuels() {
@@ -568,9 +568,9 @@ function arreterTick() {
 }
 
 
-// ─────────────────────────────────────────────────────────────
+
 //  MONTE CARLO — sélecteur de scénario
-// ─────────────────────────────────────────────────────────────
+
 
 //  Appel POST vers /api/scenario/ quand l'utilisateur choisit un scénario
 async function changerScenario(scenario) {
@@ -616,9 +616,7 @@ document.querySelectorAll('.scenario-btn').forEach(btn => {
 });
 
 
-// ─────────────────────────────────────────────────────────────
 //  Boucle principale
-// ─────────────────────────────────────────────────────────────
 
 function loop() {
     if (!running) return;
@@ -638,9 +636,7 @@ function loop() {
 }
 
 
-// ─────────────────────────────────────────────────────────────
 //  Contrôles
-// ─────────────────────────────────────────────────────────────
 
 function togglePlayPause() {
     if (running) {
@@ -717,9 +713,7 @@ document.getElementById('btn-theme').addEventListener('click', () => {
 });
 
 
-// ─────────────────────────────────────────────────────────────
 //  Lancement — attend que les 4 images soient chargées
-// ─────────────────────────────────────────────────────────────
 
 let imagesLoaded = 0;
 const totalImages = 4;
