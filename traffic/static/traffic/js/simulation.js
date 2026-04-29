@@ -425,7 +425,16 @@ function updateTrafficLights() {
 
 function updateVehicles() {
     vehicles.forEach(v => {
-        v.progress += v.baseSpeed * speedFactor;
+
+        // Multiplicateur de vitesse selon l'état Markov de la route
+        let multiplicateur = 1.0;
+        if (v.road.state === 'ralenti') {
+            multiplicateur = 0.4;   // moitié de la vitesse
+        } else if (v.road.state === 'bouchon') {
+            multiplicateur = 0.1;   // quasi à l'arrêt
+        }
+
+        v.progress += v.baseSpeed * speedFactor * multiplicateur;
         if (v.progress > 1) v.progress = 0;
     });
 }
