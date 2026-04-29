@@ -145,11 +145,28 @@ class CanvasReseau(QWidget):
             painter.setBrush(QBrush(QColor('#e2e8f0')))
             painter.drawEllipse(int(vx - 5), int(vy - 5), 10, 10)
 
+    # Remplace avancer_vehicules par ceci
     def avancer_vehicules(self):
+        """Avance les véhicules — vitesse selon l'état Markov de leur route."""
         for i in range(12):
-            self.vehicules[i] += self.vitesses[i]
+
+            # La vitesse dépend de l'état de la route
+            etat = self.etats_routes.get(i, 'fluide')
+
+            if etat == 'fluide':
+                # Route fluide = vitesse normale
+                multiplicateur = 1.0
+            elif etat == 'ralenti':
+                # Route ralentie = moitié de la vitesse
+                multiplicateur = 0.4
+            else:
+                # Bouchon = très lent
+                multiplicateur = 0.1
+
+            self.vehicules[i] += self.vitesses[i] * multiplicateur
             if self.vehicules[i] > 1.0:
                 self.vehicules[i] = 0.0
+
         self.update()
 
     def mettre_a_jour_etats(self, nouveaux_etats):
