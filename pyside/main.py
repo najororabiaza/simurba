@@ -208,6 +208,8 @@ class FenetrePrincipale(QMainWindow):
 
         self.en_cours     = False
         self.etats_routes = markov.etat_initial(12)
+        # Scénario actif - qui doit correspondre aux clés de SCENARIOS_CLES
+        self.scenario_actuel = 'normal'
 
         widget_central = QWidget()
         self.setCentralWidget(widget_central)
@@ -268,7 +270,7 @@ class FenetrePrincipale(QMainWindow):
 
 
     def _tick_markov(self):
-        self.etats_routes = markov.tick(self.etats_routes)
+        self.etats_routes = markov.tick(self.etats_routes, self.scenario_actuel)
         self.canvas.mettre_a_jour_etats(self.etats_routes)
 
         compteurs = markov.compter_etats(self.etats_routes)
@@ -326,10 +328,10 @@ class FenetrePrincipale(QMainWindow):
         )
 
     def _changer_scenario(self, index):
-        cle = SCENARIOS_CLES[index]
-        self.etats_routes = monte_carlo.generer_etats_initiaux(12, cle)
+        self.scenario_actuel = SCENARIOS_CLES[index]  # sauvegarde le scénario
+        self.etats_routes = monte_carlo.generer_etats_initiaux(12, self.scenario_actuel)
         self.canvas.mettre_a_jour_etats(self.etats_routes)
-        risque = monte_carlo.estimer_risque_bouchon(500, 12, cle)
+        risque = monte_carlo.estimer_risque_bouchon(500, 12, self.scenario_actuel)
         self.label_risque.setText(str(int(risque * 100)) + '%')
 
     def _connecter_boutons(self):
