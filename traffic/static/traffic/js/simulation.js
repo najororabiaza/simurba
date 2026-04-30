@@ -566,6 +566,7 @@ async function appellerTick() {
         // Optimisation — on met à jour les durées recommandées
         if (donnees.optimisation) {
             mettreAJourOptimisation(donnees.optimisation);
+            appellerStats();
         }
 
     } catch (erreur) {
@@ -573,6 +574,33 @@ async function appellerTick() {
         console.warn('Tick API échoué :', erreur);
     }
 }
+
+// Appel GET vers /api/stats/ — métriques M/M/1 pour le dashboard
+async function appellerStats() {
+    if (!running) return;
+
+    try {
+        const reponse = await fetch('/api/stats/');
+        const donnees = await reponse.json();
+
+        // Calcul des moyennes Lq, Wq, ρ sur toutes les routes
+        const metriques = Object.values(donnees.metriques_par_route);
+        const nb        = metriques.length;
+
+        const lq_moyen  = (metriques.reduce((s, m) => s + m.Lq,  0) / nb).toFixed(3);
+        const rho_moyen = (metriques.reduce((s, m) => s + m.rho, 0) / nb).toFixed(3);
+
+        // Mise à jour des éléments HTML
+        const lqEl  = document.getElementById('lq-moyen');
+        const rhoEl = document.getElementById('rho-moyen');
+        if (lqEl)  lqEl.textContent  = lq_moyen  + ' veh.';
+        if (rhoEl) rhoEl.textContent = rho_moyen;
+
+    } catch (erreur) {
+        console.warn('Stats API échoué :', erreur);
+    }
+}
+
 
 //  Le tick s'exécute toutes les 2 secondes
 const INTERVALLE_TICK_MS = 2000;

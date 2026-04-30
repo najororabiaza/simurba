@@ -300,6 +300,25 @@ class FenetrePrincipale(QMainWindow):
             self.files_intersections, self.etats_routes
         )
 
+        # Calcul de Lq et ρ moyens sur toutes les routes
+        total_lq  = 0.0
+        total_rho = 0.0
+        nb_routes = len(self.etats_routes)
+
+        for etat in self.etats_routes.values():
+            metriques  = queue_model.calculer_metriques(etat)
+            total_lq  += metriques['Lq']
+            total_rho += metriques['rho']
+
+        lq_moyen  = round(total_lq  / nb_routes, 3)
+        rho_moyen = round(total_rho / nb_routes, 3)
+
+        # Mise à jour du dashboard
+        self.label_inter_max.setText('Nœud ' + str(inter_max['id'] + 1) + ' — ' + str(inter_max['queue']) + ' veh.')
+        self.label_wq_moyen.setText(str(wq_moyen) + ' s')
+        self.label_lq_moyen.setText(str(lq_moyen) + ' veh.')
+        self.label_rho_moyen.setText(str(rho_moyen))
+
         # Mise à jour du dashboard
         self.label_inter_max.setText('Nœud ' + str(inter_max['id'] + 1) + ' — ' + str(inter_max['queue']) + ' veh.')
         self.label_wq_moyen.setText(str(wq_moyen) + ' s')
@@ -492,9 +511,9 @@ class FenetrePrincipale(QMainWindow):
 
         self.label_rouge = self._info_row('Feu rouge optimal', '—',  layout, 'white')
         layout.addSpacing(6)
-        self.label_vert  = self._info_row('Feu vert optimal',  '—',  layout, 'white')
+        self.label_vert  = self._info_row('Feu vert optimal', '—',  layout, 'white')
         layout.addSpacing(6)
-        self.label_gain  = self._info_row('Gain fluidité',     '—',  layout, C_FLUIDE)
+        self.label_gain  = self._info_row('Gain fluidité', '—',  layout, C_FLUIDE)
 
         # Section : Files d'attente
         layout.addWidget(separateur_h())
@@ -504,7 +523,11 @@ class FenetrePrincipale(QMainWindow):
 
         self.label_inter_max = self._ligne_info('Intersection max', '—', layout)
         layout.addSpacing(6)
-        self.label_wq_moyen  = self._ligne_info('Attente moyenne Wq', '—', layout)
+        self.label_wq_moyen  = self._ligne_info('Attente moy. Wq', '—', layout)
+        layout.addSpacing(6)
+        self.label_lq_moyen  = self._ligne_info('File moy. Lq', '—', layout)
+        layout.addSpacing(6)
+        self.label_rho_moyen = self._ligne_info('Saturation ρ', '—', layout, C_RALENTI)
 
         layout.addStretch()
 
