@@ -208,6 +208,8 @@ class FenetrePrincipale(QMainWindow):
 
         self.en_cours     = False
         self.etats_routes = markov.etat_initial(12)
+        # Files d'attente — une entrée par intersection (9 nœuds dans la grille 3x3)
+        self.files_intersections = queue_model.files_initiales(9)
         # Scénario actif - qui doit correspondre aux clés de SCENARIOS_CLES
         self.scenario_actuel = 'normal'
         # Durées des feux calculées par l'optimiseur — en millisecondes pour QTimer
@@ -284,6 +286,23 @@ class FenetrePrincipale(QMainWindow):
     def _tick_markov(self):
         self.etats_routes = markov.tick(self.etats_routes, self.scenario_actuel)
         self.canvas.mettre_a_jour_etats(self.etats_routes)
+        
+        # Mise à jour des files d'attente selon les nouveaux états Markov
+        self.files_intersections = queue_model.tick_files(
+            self.files_intersections, self.etats_routes
+        )
+
+        # Intersection la plus chargée
+        inter_max = queue_model.intersection_max(self.files_intersections)
+
+        # Temps d'attente moyen sur le réseau
+        wq_moyen = queue_model.temps_attente_moyen(
+            self.files_intersections, self.etats_routes
+        )
+
+        # Mise à jour du dashboard
+        self.label_inter_max.setText('Nœud ' + str(inter_max['id'] + 1) + ' — ' + str(inter_max['queue']) + ' veh.')
+        self.label_wq_moyen.setText(str(wq_moyen) + ' s')
 
         compteurs = markov.compter_etats(self.etats_routes)
         self.label_fluide.setText(str(compteurs['fluide']))
@@ -321,6 +340,7 @@ class FenetrePrincipale(QMainWindow):
     def _reinitialiser(self):
         self.canvas.vehicules = [0.0] * 12
         self.etats_routes = markov.etat_initial(12)
+        self.files_intersections = queue_model.files_initiales(9) # remettre les files à zéro
         self.canvas.mettre_a_jour_etats(self.etats_routes)
         if not self.en_cours:
             self._demarrer()
@@ -332,6 +352,7 @@ class FenetrePrincipale(QMainWindow):
         self.timer_feux.stop()  # la gestion du timer des feux
         self.canvas.vehicules = [0.0] * 12
         self.etats_routes = markov.etat_initial(12)
+        self.files_intersections = queue_model.files_initiales(9) # remettre les files à zéro
         self.canvas.mettre_a_jour_etats(self.etats_routes)
         self._set_etat('arrêté', C_BOUCHON)
         self.btn_start.setEnabled(True)
@@ -474,6 +495,16 @@ class FenetrePrincipale(QMainWindow):
         self.label_vert  = self._info_row('Feu vert optimal',  '—',  layout, 'white')
         layout.addSpacing(6)
         self.label_gain  = self._info_row('Gain fluidité',     '—',  layout, C_FLUIDE)
+
+        # Section : Files d'attente
+        layout.addWidget(separateur_h())
+        layout.addSpacing(14)
+        layout.addWidget(label_section('Files d\'attente M/M/1'))
+        layout.addSpacing(10)
+
+        self.label_inter_max = self._ligne_info('Intersection max', '—', layout)
+        layout.addSpacing(6)
+        self.label_wq_moyen  = self._ligne_info('Attente moyenne Wq', '—', layout)
 
         layout.addStretch()
 
