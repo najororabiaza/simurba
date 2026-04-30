@@ -210,6 +210,9 @@ class FenetrePrincipale(QMainWindow):
         self.etats_routes = markov.etat_initial(12)
         # Scénario actif - qui doit correspondre aux clés de SCENARIOS_CLES
         self.scenario_actuel = 'normal'
+        # Durées des feux calculées par l'optimiseur — en millisecondes pour QTimer
+        self.duree_rouge_ms = 30 * 1000
+        self.duree_vert_ms  = 30 * 1000
 
         widget_central = QWidget()
         self.setCentralWidget(widget_central)
@@ -261,6 +264,15 @@ class FenetrePrincipale(QMainWindow):
         self.timer_markov.setInterval(2000)
         self.timer_markov.timeout.connect(self._tick_markov)
 
+        # Timer des feux — durée variable selon l'optimiseur
+        self.timer_feux = QTimer()
+        self.timer_feux.timeout.connect(self._basculer_feux)
+        self.timer_feux.start(self.duree_rouge_ms)
+
+        # État actuel des feux (True = vert, False = rouge)
+        self.feux_verts = False
+
+
         # Démarrage automatique
         self._demarrer()
 
@@ -279,6 +291,9 @@ class FenetrePrincipale(QMainWindow):
         self.label_bouchon.setText(str(compteurs['bouchon']))
 
         resultat = optimizer.optimiser_feux(self.etats_routes)
+        # On met à jour les durées des feux selon l'optimiseur
+        self.duree_rouge_ms = resultat['duree_rouge'] * 1000
+        self.duree_vert_ms  = resultat['duree_vert']  * 1000
         self.label_rouge.setText(str(resultat['duree_rouge']) + ' s')
         self.label_vert.setText(str(resultat['duree_vert']) + ' s')
         self.label_gain.setText('+' + str(resultat['gain_pourcent']) + '%')
@@ -288,6 +303,7 @@ class FenetrePrincipale(QMainWindow):
         self.en_cours = True
         self.timer_animation.start()
         self.timer_markov.start()
+        self.timer_feux.start(self.duree_rouge_ms)  # la gestion du timer des feux
         self._set_etat('en cours...', C_FLUIDE)
         self.btn_start.setEnabled(False)
         self.btn_pause.setEnabled(True)
@@ -297,6 +313,7 @@ class FenetrePrincipale(QMainWindow):
         self.en_cours = False
         self.timer_animation.stop()
         self.timer_markov.stop()
+        self.timer_feux.stop()  # la gestion du timer des feux
         self._set_etat('en pause', C_RALENTI)
         self.btn_start.setEnabled(True)
         self.btn_pause.setEnabled(False)
@@ -312,6 +329,7 @@ class FenetrePrincipale(QMainWindow):
         self.en_cours = False
         self.timer_animation.stop()
         self.timer_markov.stop()
+        self.timer_feux.stop()  # la gestion du timer des feux
         self.canvas.vehicules = [0.0] * 12
         self.etats_routes = markov.etat_initial(12)
         self.canvas.mettre_a_jour_etats(self.etats_routes)
@@ -500,6 +518,21 @@ class FenetrePrincipale(QMainWindow):
         ll.addWidget(lbl_v)
         layout_parent.addWidget(ligne)
         return lbl_v
+
+    def _basculer_feux(self):
+        """Bascule l'état des feux et applique la durée calculée par l'optimiseur."""
+
+        # On bascule l'état
+        self.feux_verts = not self.feux_verts
+
+        # On applique la durée correspondante calculée par Python
+        if self.feux_verts:
+            self.timer_feux.start(self.duree_vert_ms)
+        else:
+            self.timer_feux.start(self.duree_rouge_ms)
+
+        # On redessine le canvas
+        self.canvas.update()
 
 
 #  Lancement
