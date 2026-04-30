@@ -108,6 +108,9 @@ let running = false;
 let animationId = null;
 
 let speedFactor = 1;
+// Durées des feux reçues de l'optimiseur Python — en frames (secondes × 60fps)
+let dureeVertFrames  = 30 * 60;
+let dureeRougeFrames = 30 * 60;
 const speedSlider = document.getElementById('speed-slider');
 const speedLabel  = document.getElementById('speed-label');
 const presetBtns  = document.querySelectorAll('.speed-preset');
@@ -419,7 +422,14 @@ function drawVehicles() {
 function updateTrafficLights() {
     trafficLights.forEach(tl => {
         tl.timer += speedFactor;
-        if (tl.timer > 300) { tl.state = tl.state === 'green' ? 'red' : 'green'; tl.timer = 0; }
+
+        // Durée calculée par Python selon l'état du réseau
+        const dureeActuelle = tl.state === 'green' ? dureeVertFrames : dureeRougeFrames;
+
+        if (tl.timer > dureeActuelle) {
+            tl.state = tl.state === 'green' ? 'red' : 'green';
+            tl.timer = 0;
+        }
     });
 }
 
@@ -524,6 +534,10 @@ function mettreAJourOptimisation(optim) {
     if (rougeEl) rougeEl.textContent = optim.duree_rouge + ' s';
     if (vertEl)  vertEl.textContent  = optim.duree_vert  + ' s';
     if (gainEl)  gainEl.textContent  = '+' + optim.gain_pourcent + '%';
+
+    // Python a calculé ces durées — le JS les applique uniquement
+    dureeVertFrames  = optim.duree_vert  * 60;
+    dureeRougeFrames = optim.duree_rouge * 60;
 }
 
 //  Appel POST vers /api/tick/ — cœur de la simulation côté serveur
