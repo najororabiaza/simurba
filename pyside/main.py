@@ -319,10 +319,6 @@ class FenetrePrincipale(QMainWindow):
         self.label_lq_moyen.setText(str(lq_moyen) + ' veh.')
         self.label_rho_moyen.setText(str(rho_moyen))
 
-        # Mise à jour du dashboard
-        self.label_inter_max.setText('Nœud ' + str(inter_max['id'] + 1) + ' — ' + str(inter_max['queue']) + ' veh.')
-        self.label_wq_moyen.setText(str(wq_moyen) + ' s')
-
         compteurs = markov.compter_etats(self.etats_routes)
         self.label_fluide.setText(str(compteurs['fluide']))
         self.label_ralenti.setText(str(compteurs['ralenti']))
