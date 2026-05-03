@@ -8,66 +8,47 @@ from . import markov
 from . import queue_model
 from . import monte_carlo
 from . import optimizer
+from . import pathfinding
 
 
-# --- État global du réseau (mémoire côté serveur) ---------------------------
-# Ces variables sont partagées entre tous les appels API.
-# Elles vivent tant que le serveur Django tourne.
+# --- État global du réseau ---------------------------------------------------
 
-etat_reseau         = None      # dict { id_route: etat }         (Markov)
-files_intersections = None      # dict { id_noeud: nb_vehicules } (files d'attente)
-scenario_actuel     = 'normal'  # scénario Monte Carlo en cours
+etat_reseau         = None
+files_intersections = None
+scenario_actuel     = 'normal'
 
 
-# --- Page principale ----------------------------------------------------------
+# --- Page principale ---------------------------------------------------------
 
 def index(request):
-    """Affiche la page HTML de la simulation."""
     return render(request, 'traffic/base.html')
 
 
-# --- API tick (appelée toutes les 2 secondes par le JS) -----------------------
+# --- API tick ----------------------------------------------------------------
 
 @csrf_exempt
 def api_tick(request):
-    """
-    Fait avancer la simulation d'un pas de temps :
-      1. Markov : nouvel état de chaque route (en fonction du scénario)
-      2. Files d'attente M/M/1 : mise à jour des files
-      3. Optimisation : calcul des meilleurs temps de feux
-    Retourne tout en JSON pour l'IHM.
-    """
     global etat_reseau, files_intersections
 
     if request.method != 'POST':
         return JsonResponse({'erreur': 'Méthode non autorisée'}, status=405)
-
     try:
         donnees = json.loads(request.body)
     except json.JSONDecodeError:
         return JsonResponse({'erreur': 'JSON invalide'}, status=400)
 
-    # Récupération des états envoyés par le client (pour initialisation éventuelle)
     etats_recus = donnees.get('etats', {})
     etats_recus = {int(cle): valeur for cle, valeur in etats_recus.items()}
 
-    # Initialisation au tout premier appel
     if etat_reseau is None:
         etat_reseau = etats_recus
-
     if files_intersections is None:
-        files_intersections = queue_model.files_initiales(9)  # grille 3x3
+        files_intersections = queue_model.files_initiales(9)
 
-    # 1. Évolution Markov avec le scénario actif
-    etat_reseau = markov.tick(etat_reseau, scenario=scenario_actuel)
-
-    # 2. Mise à jour des files d'attente
+    etat_reseau         = markov.tick(etat_reseau, scenario=scenario_actuel)
     files_intersections = queue_model.tick_files(files_intersections, etat_reseau)
+    resultat_optim      = optimizer.optimiser_feux(etat_reseau)
 
-    # 3. Optimisation des feux
-    resultat_optim = optimizer.optimiser_feux(etat_reseau)
-
-    # Indicateurs pour le dashboard
     compteurs = markov.compter_etats(etat_reseau)
     inter_max = queue_model.intersection_max(files_intersections)
     wq_moyen  = queue_model.temps_attente_moyen(files_intersections, etat_reseau)
@@ -82,41 +63,27 @@ def api_tick(request):
     })
 
 
-# --- API scénario (changement de scénario Monte Carlo) -----------------------
+# --- API scénario ------------------------------------------------------------
 
 @csrf_exempt
 def api_scenario(request):
-    """
-    Change le scénario actif.
-    Génère de nouveaux états initiaux par Monte Carlo,
-    remet les files à zéro, et estime le risque de bouchon.
-    """
     global etat_reseau, files_intersections, scenario_actuel
 
     if request.method != 'POST':
         return JsonResponse({'erreur': 'Méthode non autorisée'}, status=405)
-
     try:
         donnees = json.loads(request.body)
     except json.JSONDecodeError:
         return JsonResponse({'erreur': 'JSON invalide'}, status=400)
 
     scenario = donnees.get('scenario', 'normal')
-
     if scenario not in monte_carlo.lister_scenarios():
         return JsonResponse({'erreur': 'Scénario inconnu'}, status=400)
 
-    # Mise à jour du scénario actif
-    scenario_actuel = scenario
-
-    # Génération Monte Carlo des états du réseau
-    etat_reseau = monte_carlo.generer_etats_initiaux(12, scenario)
-
-    # Remise à zéro des files d'attente
+    scenario_actuel     = scenario
+    etat_reseau         = monte_carlo.generer_etats_initiaux(12, scenario)
     files_intersections = queue_model.files_initiales(9)
-
-    # Estimation du risque de bouchon (500 simulations)
-    risque = monte_carlo.estimer_risque_bouchon(500, 12, scenario)
+    risque              = monte_carlo.estimer_risque_bouchon(500, 12, scenario)
 
     return JsonResponse({
         'etats':          {str(k): v for k, v in etat_reseau.items()},
@@ -127,16 +94,11 @@ def api_scenario(request):
     })
 
 
-# --- API stats (métriques M/M/1 détaillées) -----------------------------------
+# --- API stats ---------------------------------------------------------------
 
 def api_stats(request):
-    """
-    Retourne les métriques M/M/1 pour chaque route et la moyenne Wq.
-    (Appelée en GET)
-    """
     if request.method != 'GET':
         return JsonResponse({'erreur': 'Méthode non autorisée'}, status=405)
-
     if etat_reseau is None:
         return JsonResponse({'erreur': 'Simulation non démarrée'}, status=400)
 
@@ -152,3 +114,73 @@ def api_stats(request):
         'scenario_actuel': scenario_actuel,
         'scenarios_disponibles': monte_carlo.lister_scenarios(),
     })
+
+
+# --- API Pathfinding — initialisation ----------------------------------------
+# Python calcule TOUT le pathfinding (Dijkstra + marche aléatoire guidée).
+# JavaScript reçoit les chemins et s'occupe uniquement de l'affichage.
+
+@csrf_exempt
+def api_pathfinding_init(request):
+    """
+    Génère les chemins initiaux pour tous les véhicules.
+
+    Corps POST :
+        { "num_vehicles": 12, "etats": {...}, "path_length": 30 }
+
+    Réponse :
+        { "paths": [ { "vehicle_id", "origin_node", "current_node", "path": [...] }, ... ] }
+    """
+    if request.method != 'POST':
+        return JsonResponse({'erreur': 'Méthode non autorisée'}, status=405)
+    try:
+        donnees = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'erreur': 'JSON invalide'}, status=400)
+
+    nb_vehicules    = int(donnees.get('num_vehicles', 12))
+    longueur_chemin = int(donnees.get('path_length',  30))
+    etats_recus     = {int(k): v for k, v in donnees.get('etats', {}).items()}
+
+    chemins = pathfinding.init_chemins(
+        nb_vehicules     = nb_vehicules,
+        etats_routes     = etats_recus,
+        longueur_chemin  = longueur_chemin,
+    )
+    return JsonResponse({'paths': chemins})
+
+
+# --- API Pathfinding — extension de chemin -----------------------------------
+
+@csrf_exempt
+def api_pathfinding_extend(request):
+    """
+    Étend le chemin d'un véhicule (appelé quand < 6 étapes restantes).
+
+    Corps POST :
+        { "current_node": 4, "origin_node": 0,
+          "visited_nodes": [0,1,4], "etats": {...} }
+
+    Réponse :
+        { "path": [ { "from_node", "to_node", "road_idx", "reversed" }, ... ] }
+    """
+    if request.method != 'POST':
+        return JsonResponse({'erreur': 'Méthode non autorisée'}, status=405)
+    try:
+        donnees = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'erreur': 'JSON invalide'}, status=400)
+
+    nœud_courant  = int(donnees.get('current_node', 0))
+    nœud_origine  = int(donnees.get('origin_node',  0))
+    nœuds_visités = [int(n) for n in donnees.get('visited_nodes', [])]
+    etats_int     = {int(k): v for k, v in donnees.get('etats', {}).items()}
+
+    extension = pathfinding.etendre_chemin(
+        nœud_courant  = nœud_courant,
+        nœud_origine  = nœud_origine,
+        nœuds_visités = nœuds_visités,
+        etats_routes  = etats_int,
+        étapes_supp   = 20,
+    )
+    return JsonResponse({'path': extension})
