@@ -517,13 +517,13 @@ class FenetrePrincipale(QMainWindow):
         layout.addWidget(label_section('Files d\'attente M/M/1'))
         layout.addSpacing(10)
 
-        self.label_inter_max = self._ligne_info('Intersection max', '—', layout)
+        self.label_inter_max = self._info_row('Intersection max', '—', layout)
         layout.addSpacing(6)
-        self.label_wq_moyen  = self._ligne_info('Attente moy. Wq', '—', layout)
+        self.label_wq_moyen  = self._info_row('Attente moy. Wq', '—', layout)
         layout.addSpacing(6)
-        self.label_lq_moyen  = self._ligne_info('File moy. Lq', '—', layout)
+        self.label_lq_moyen  = self._info_row('File moy. Lq', '—', layout)
         layout.addSpacing(6)
-        self.label_rho_moyen = self._ligne_info('Saturation ρ', '—', layout, C_RALENTI)
+        self.label_rho_moyen = self._info_row('Saturation ρ', '—', layout, C_RALENTI)
 
         layout.addStretch()
 
