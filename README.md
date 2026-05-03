@@ -26,8 +26,9 @@
 - [Presentation](#presentation)
 - [Architecture du projet](#architecture-du-projet)
 - [Modeles mathematiques integres](#modeles-mathematiques-integres)
-- [Prerequis](#prerequis)
-- [Installation et lancement (interface web Django)](#installation-et-lancement-interface-web-django)
+- [Compatibilite et versions](#compatibilite-et-versions)
+- [Methode recommandee — uv](#methode-recommandee--uv-tous-systemes)
+- [Methode alternative — pip classique](#methode-alternative--pip-classique)
 - [Lancement de l'interface desktop (PySide6)](#lancement-de-linterface-desktop-pyside6)
 - [Structure des fichiers](#structure-des-fichiers)
 - [API interne](#api-interne)
@@ -38,7 +39,7 @@
 
 ## Presentation
 
-**Simurba** (Simulation Urbaine) est une application de simulation de trafic urbain developpée dans le cadre du projet final du cours de Modelisation Stochastique (L2 Informatique — ESTI).
+**Simurba** (Simulation Urbaine) est une application de simulation de trafic urbain developpee dans le cadre du projet final du cours de Modelisation Stochastique (L2 Informatique — ESTI).
 
 L'objectif est de repondre aux questions suivantes :
 
@@ -108,78 +109,183 @@ Un module d'optimisation par recherche exhaustive teste toutes les combinaisons 
 
 ---
 
-## Prerequis
+## Compatibilite et versions
 
-- Python **3.10** ou superieur
-- `pip` (gestionnaire de paquets Python)
-- (Optionnel pour PySide6) un environnement graphique (Linux avec X11/Wayland, macOS ou Windows)
+### Environnement de developpement
 
-Verification de la version Python :
+| Technologie | Version utilisee  | Systeme de developpement |
+|-------------|-------------------|--------------------------|
+| Python      | 3.10.x            | macOS Mojave 10.14.6     |
+| Django      | 5.2.12            |                          |
+| numpy       | 1.26 ou superieur |                          |
+| asgiref     | 3.11.1            |                          |
+| sqlparse    | 0.5.5             |                          |
+| whitenoise  | 6.12.0            |                          |
+| PySide6     | derniere stable   | optionnel                |
+
+### Compatibilite verifiee par systeme
+
+| Systeme d'exploitation | Statut     | Notes                               |
+|------------------------|------------|-------------------------------------|
+| macOS 10.14 (Mojave)   | Fonctionne | environnement de developpement      |
+| macOS 12 et plus       | Fonctionne |                                     |
+| Windows 10 / 11        | Fonctionne | utiliser PowerShell ou Git Bash     |
+| Ubuntu 20.04 / 22.04   | Fonctionne |                                     |
+| Debian 11 / 12         | Fonctionne |                                     |
+
+### Compatibilite par version de Python
+
+| Version Python | Compatibilite | Raison                                          |
+|----------------|---------------|-------------------------------------------------|
+| 3.8 et moins   | Non           | Django 5.x requiert Python 3.10 minimum         |
+| 3.9            | Non           | Django 5.x requiert Python 3.10 minimum         |
+| 3.10.x         | Oui           | version utilisee pour le developpement          |
+| 3.11.x         | Oui           | compatible et teste                             |
+| 3.12.x         | Oui           | compatible et teste                             |
+| 3.13.x         | Oui           | compatible                                      |
+
+> **Important** : si votre machine a Python 3.9 ou inferieur, ou si vous ne souhaitez pas modifier votre installation Python existante, utilisez la methode `uv` ci-dessous. Elle gere la bonne version automatiquement sans rien toucher a votre systeme.
+
+---
+
+## Methode recommandee — uv (tous systemes)
+
+`uv` est un gestionnaire de projets Python moderne et rapide. Il telecharge automatiquement la bonne version de Python, cree un environnement isole et installe toutes les dependances en une seule commande. Vous n'avez pas besoin d'avoir Python preinstalle sur votre machine.
+
+### Etape 1 — Installer uv
+
+**macOS et Linux :**
 
 ```bash
-python --version
-# ou
-python3 --version
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Fermer et rouvrir le terminal apres l'installation, puis verifier :
+
+```bash
+uv --version
+```
+
+**Windows (PowerShell) :**
+
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Fermer et rouvrir PowerShell apres l'installation, puis verifier :
+
+```powershell
+uv --version
+```
+
+### Etape 2 — Cloner le depot
+
+```bash
+git clone https://github.com/NajoroRabiaza/simurba.git
+cd simurba
+```
+
+### Etape 3 — Lancer le projet
+
+```bash
+uv run manage.py migrate
+uv run manage.py runserver
+```
+
+`uv` fait tout automatiquement : il telecharge Python 3.10, cree un environnement virtuel isole dans le dossier `.venv`, installe les dependances du `requirements.txt`, puis execute la commande. Rien d'autre a faire.
+
+### Etape 4 — Ouvrir l'application
+
+```
+http://127.0.0.1:8000
 ```
 
 ---
 
-## Installation et lancement (interface web Django)
+## Methode alternative — pip classique
 
-### 1. Cloner le depot
+Utilisez cette methode uniquement si vous avez deja **Python 3.10, 3.11, 3.12 ou 3.13** installe sur votre machine.
+
+### Verifier votre version de Python
 
 ```bash
-git clone https://github.com/<votre-utilisateur>/simurba.git
+python --version
+# ou sur certains systemes Linux / macOS
+python3 --version
+```
+
+Si la version affichee est **3.9 ou inferieure**, revenez a la methode `uv` ci-dessus.
+
+### Etape 1 — Cloner le depot
+
+```bash
+git clone https://github.com/NajoroRabiaza/simurba.git
 cd simurba
 ```
 
-### 2. Creer et activer un environnement virtuel
+### Etape 2 — Creer un environnement virtuel
 
-**Linux / macOS :**
+L'environnement virtuel isole les dependances du projet de votre Python systeme. Ne sautez pas cette etape.
+
+**macOS / Linux :**
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-**Windows :**
+**Windows (PowerShell) :**
 
-```bash
+```powershell
 python -m venv venv
-venv\Scripts\activate
+venv\Scripts\Activate.ps1
 ```
 
-### 3. Installer les dependances
+Si PowerShell refuse d'executer le script pour raison de politique d'execution, lancez d'abord :
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**Windows (Command Prompt) :**
+
+```cmd
+python -m venv venv
+venv\Scripts\activate.bat
+```
+
+Votre invite de commande doit afficher `(venv)` au debut de la ligne pour confirmer que l'environnement est actif.
+
+### Etape 3 — Installer les dependances
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Le fichier `requirements.txt` contient :
+Le fichier `requirements.txt` contient les versions exactes utilisees pendant le developpement :
 
 ```
+asgiref==3.11.1
 Django==5.2.12
 numpy>=1.26
-asgiref==3.8.1
-sqlparse==0.5.3
-whitenoise==6.7.0
+sqlparse==0.5.5
+typing_extensions==4.15.0
+whitenoise==6.12.0
 ```
 
-### 4. Appliquer les migrations
+### Etape 4 — Appliquer les migrations
 
 ```bash
 python manage.py migrate
 ```
 
-### 5. Lancer le serveur de developpement
+### Etape 5 — Lancer le serveur
 
 ```bash
 python manage.py runserver
 ```
 
-### 6. Ouvrir l'application
-
-Ouvrir un navigateur et aller a l'adresse :
+### Etape 6 — Ouvrir l'application
 
 ```
 http://127.0.0.1:8000
@@ -193,21 +299,28 @@ La simulation demarre automatiquement. La carte se met a jour toutes les 2 secon
 
 L'interface PySide6 est une version autonome qui n'utilise pas Django. Elle utilise les memes modules mathematiques (`traffic/markov.py`, `traffic/queue_model.py`, etc.).
 
-### Prerequis supplementaires
+> PySide6 necessite un environnement graphique. Sur un serveur distant sans affichage, utilisez l'interface web Django.
+
+### Avec uv
+
+```bash
+uv run --with PySide6 pyside/main.py
+```
+
+### Avec pip classique
 
 ```bash
 pip install PySide6
-```
-
-### Lancement
-
-Depuis la racine du projet :
-
-```bash
 python pyside/main.py
 ```
 
-> Remarque : PySide6 necessite un environnement graphique. Sur un serveur distant sans affichage, utilisez l'interface web Django.
+### Problemes connus avec PySide6
+
+| Systeme      | Probleme possible                       | Solution                                        |
+|--------------|-----------------------------------------|-------------------------------------------------|
+| macOS Mojave | Avertissement de securite a l'ouverture | Autoriser dans Preferences Systeme > Securite   |
+| Ubuntu       | Erreur `xcb` ou affichage manquant      | `sudo apt install libxcb-xinerama0`             |
+| Windows      | DLL manquante                           | Installer Visual C++ Redistributable depuis microsoft.com |
 
 ---
 
@@ -242,7 +355,7 @@ simurba/
 |   `-- index.py               # Point d'entree pour le deploiement Vercel
 |
 |-- manage.py                  # Point d'entree Django standard
-|-- requirements.txt           # Dependances Python
+|-- requirements.txt           # Dependances Python avec versions gelees
 |-- vercel.json                # Configuration de deploiement Vercel
 `-- db.sqlite3                 # Base de donnees SQLite (generee automatiquement)
 ```
@@ -253,11 +366,11 @@ simurba/
 
 L'interface web communique avec le backend Django via trois endpoints JSON :
 
-| Endpoint | Methode | Description |
-|---|---|---|
-| `/api/tick/` | GET | Calcule un nouveau tick : applique Markov sur toutes les routes, retourne les etats mis a jour |
-| `/api/scenario/` | POST | Change le scenario actif (normal / heure_de_pointe / nuit / accident) et reinitialise les etats Monte Carlo |
-| `/api/stats/` | GET | Retourne les metriques M/M/1 completes (Wq, Lq, rho) et les resultats d'optimisation des feux |
+| Endpoint         | Methode | Description                                                                              |
+|------------------|---------|------------------------------------------------------------------------------------------|
+| `/api/tick/`     | GET     | Calcule un nouveau tick : applique Markov sur toutes les routes, retourne les etats mis a jour |
+| `/api/scenario/` | POST    | Change le scenario actif (normal / heure_de_pointe / nuit / accident) et reinitialise les etats Monte Carlo |
+| `/api/stats/`    | GET     | Retourne les metriques M/M/1 completes (Wq, Lq, rho) et les resultats d'optimisation des feux |
 
 Exemple de reponse de `/api/stats/` :
 
@@ -285,6 +398,7 @@ Le projet est configure pour un deploiement direct sur [Vercel](https://vercel.c
 ### Etapes
 
 1. Creer un compte sur vercel.com
+
 2. Installer la CLI Vercel :
 
 ```bash

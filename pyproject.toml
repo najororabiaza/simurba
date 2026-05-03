@@ -1,0 +1,22 @@
+[project]
+name = "simurba"
+version = "1.0.0"
+description = "Simulateur de trafic urbain — Modelisation Stochastique L2 ESTI"
+requires-python = ">=3.10"
+
+dependencies = [
+    "asgiref==3.11.1",
+    "Django==5.2.12",
+    "numpy>=1.26",
+    "sqlparse==0.5.5",
+    "typing_extensions==4.15.0",
+    "whitenoise==6.12.0",
+]
+
+[project.optional-dependencies]
+desktop = [
+    "PySide6",
+]
+
+[tool.uv]
+python-preference = "managed"

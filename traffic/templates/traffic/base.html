@@ -361,6 +361,17 @@ text-align: center; width: auto; display: block; margin-bottom: 0;
 .speed-preset:hover { background: var(--color-bg-section); color: var(--color-text-primary); }
 .speed-preset.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 
+/* ── Pathfinding ── */
+#btn-pathfinding:hover { opacity: 0.88; box-shadow: 0 0 14px 3px rgba(124,58,237,0.45) !important; }
+#btn-pathfinding.active {
+    background: linear-gradient(135deg, #059669, #10b981) !important;
+    box-shadow: 0 0 10px 2px rgba(16,185,129,0.35) !important;
+}
+#btn-pf-continue.active  { background: rgba(79,70,229,0.28) !important; border-color: #6366f1 !important; }
+#btn-pf-restart.active   { background: rgba(245,158,11,0.18) !important; border-color: #f59e0b !important; }
+#btn-pf-continue:hover,
+#btn-pf-restart:hover    { opacity: 0.80; }
+
 .status-row {
 display: flex; justify-content: space-between;
 align-items: center; font-size: 13px; margin-bottom: 10px;
@@ -669,8 +680,69 @@ Contrôles
 <kbd style="background:#334155; color:#f8fafc; border:1px solid #475569; border-radius:4px; padding:2px 6px; font-weight:600; font-family:monospace; margin-left:6px; margin-right:4px;">R</kbd> reset
 <kbd style="background:#334155; color:#f8fafc; border:1px solid #475569; border-radius:4px; padding:2px 6px; font-weight:600; font-family:monospace; margin-left:6px; margin-right:4px;">+/-</kbd> vitesse
 <kbd style="background:#334155; color:#f8fafc; border:1px solid #475569; border-radius:4px; padding:2px 6px; font-weight:600; font-family:monospace; margin-left:6px; margin-right:4px;">D</kbd> panneau
+<kbd style="background:#334155; color:#f8fafc; border:1px solid #475569; border-radius:4px; padding:2px 6px; font-weight:600; font-family:monospace; margin-left:6px; margin-right:4px;">P</kbd> pathfinding
 </p>
 </div>
+
+<!-- ╔══════════════════════════════════════════════╗ -->
+<!-- ║  SECTION PATHFINDING                         ║ -->
+<!-- ╚══════════════════════════════════════════════╝ -->
+<div class="section" id="section-pathfinding" style="display:none;">
+<p class="section-title">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/><path d="M4.93 4.93l2.12 2.12m9.9 9.9l2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9l2.12-2.12"/>
+</svg>
+Pathfinding
+</p>
+
+<button type="button" id="btn-pathfinding"
+  style="width:100%; margin-bottom:8px; background:linear-gradient(135deg,#4f46e5,#7c3aed);
+         font-weight:700; font-size:13px; border:none; border-radius:6px; padding:9px 0;
+         color:#fff; cursor:pointer; transition:opacity .2s, box-shadow .2s;
+         box-shadow:0 0 0 0 rgba(124,58,237,0);">
+🗺 Activer Pathfinding
+</button>
+
+<!-- Sous-panneau visible uniquement quand actif -->
+<div id="pf-panel" style="display:none;">
+  <p style="font-size:11px; color:var(--color-text-sub); margin:0 0 7px 0; line-height:1.5;">
+    Choisissez ce qui arrive aux véhicules quand le pathfinding s'active :
+  </p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px;">
+    <button type="button" id="btn-pf-continue" class="active"
+      style="font-size:11px; padding:6px 4px; border-radius:5px; border:1.5px solid #4f46e5;
+             background:rgba(79,70,229,0.15); color:var(--color-text); cursor:pointer; transition:.15s;">
+      ▶ Continuer
+    </button>
+    <button type="button" id="btn-pf-restart"
+      style="font-size:11px; padding:6px 4px; border-radius:5px; border:1.5px solid #475569;
+             background:transparent; color:var(--color-text); cursor:pointer; transition:.15s;">
+      ⏮ Nouveau départ
+    </button>
+  </div>
+
+  <div style="background:rgba(79,70,229,0.08); border:1px solid rgba(79,70,229,0.25);
+              border-radius:6px; padding:8px 10px; font-size:11px; color:var(--color-text-sub);
+              line-height:1.6;">
+    <span style="color:#a5b4fc; font-weight:600;">Algorithme Python (Dijkstra + marche guidée)</span><br>
+    • Ne revient <em>jamais</em> à l'origine<br>
+    • Change de direction à chaque intersection<br>
+    • Préfère les routes fluides (poids Markov)<br>
+    • Arc Bézier réaliste pour les virages
+  </div>
+
+  <div style="margin-top:9px; display:grid; grid-template-columns:1fr 1fr; gap:5px; font-size:11px; color:var(--color-text-sub);">
+    <span>Véhicules en chemin :</span>
+    <span id="pf-stat-active" style="text-align:right; color:#a5b4fc; font-weight:600;">0 / 0</span>
+    <span>En virage :</span>
+    <span id="pf-stat-turning" style="text-align:right; color:#fcd34d; font-weight:600;">0</span>
+    <span>Extensions :</span>
+    <span id="pf-stat-fetching" style="text-align:right; color:#34d399; font-weight:600;">0</span>
+  </div>
+</div>
+
+</div>
+<!-- ╚══ FIN PATHFINDING ══╝ -->
 
 <div class="section">
 <p class="section-title">
