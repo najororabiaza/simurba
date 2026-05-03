@@ -2,7 +2,7 @@
 name = "simurba"
 version = "1.0.0"
 description = "Simulateur de trafic urbain — Modelisation Stochastique L2 ESTI"
-requires-python = "==3.10.11"
+requires-python = ">=3.10"
 
 dependencies = [
     "asgiref==3.11.1",
