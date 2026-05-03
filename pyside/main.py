@@ -145,11 +145,28 @@ class CanvasReseau(QWidget):
             painter.setBrush(QBrush(QColor('#e2e8f0')))
             painter.drawEllipse(int(vx - 5), int(vy - 5), 10, 10)
 
+    # Remplace avancer_vehicules par ceci
     def avancer_vehicules(self):
+        """Avance les véhicules — vitesse selon l'état Markov de leur route."""
         for i in range(12):
-            self.vehicules[i] += self.vitesses[i]
+
+            # La vitesse dépend de l'état de la route
+            etat = self.etats_routes.get(i, 'fluide')
+
+            if etat == 'fluide':
+                # Route fluide = vitesse normale
+                multiplicateur = 1.0
+            elif etat == 'ralenti':
+                # Route ralentie = moitié de la vitesse
+                multiplicateur = 0.4
+            else:
+                # Bouchon = très lent
+                multiplicateur = 0.1
+
+            self.vehicules[i] += self.vitesses[i] * multiplicateur
             if self.vehicules[i] > 1.0:
                 self.vehicules[i] = 0.0
+
         self.update()
 
     def mettre_a_jour_etats(self, nouveaux_etats):
@@ -191,6 +208,13 @@ class FenetrePrincipale(QMainWindow):
 
         self.en_cours     = False
         self.etats_routes = markov.etat_initial(12)
+        # Files d'attente — une entrée par intersection (9 nœuds dans la grille 3x3)
+        self.files_intersections = queue_model.files_initiales(9)
+        # Scénario actif - qui doit correspondre aux clés de SCENARIOS_CLES
+        self.scenario_actuel = 'normal'
+        # Durées des feux calculées par l'optimiseur — en millisecondes pour QTimer
+        self.duree_rouge_ms = 30 * 1000
+        self.duree_vert_ms  = 30 * 1000
 
         widget_central = QWidget()
         self.setCentralWidget(widget_central)
@@ -242,6 +266,15 @@ class FenetrePrincipale(QMainWindow):
         self.timer_markov.setInterval(2000)
         self.timer_markov.timeout.connect(self._tick_markov)
 
+        # Timer des feux — durée variable selon l'optimiseur
+        self.timer_feux = QTimer()
+        self.timer_feux.timeout.connect(self._basculer_feux)
+        self.timer_feux.start(self.duree_rouge_ms)
+
+        # État actuel des feux (True = vert, False = rouge)
+        self.feux_verts = False
+
+
         # Démarrage automatique
         self._demarrer()
 
@@ -251,8 +284,40 @@ class FenetrePrincipale(QMainWindow):
 
 
     def _tick_markov(self):
-        self.etats_routes = markov.tick(self.etats_routes)
+        self.etats_routes = markov.tick(self.etats_routes, self.scenario_actuel)
         self.canvas.mettre_a_jour_etats(self.etats_routes)
+        
+        # Mise à jour des files d'attente selon les nouveaux états Markov
+        self.files_intersections = queue_model.tick_files(
+            self.files_intersections, self.etats_routes
+        )
+
+        # Intersection la plus chargée
+        inter_max = queue_model.intersection_max(self.files_intersections)
+
+        # Temps d'attente moyen sur le réseau
+        wq_moyen = queue_model.temps_attente_moyen(
+            self.files_intersections, self.etats_routes
+        )
+
+        # Calcul de Lq et ρ moyens sur toutes les routes
+        total_lq  = 0.0
+        total_rho = 0.0
+        nb_routes = len(self.etats_routes)
+
+        for etat in self.etats_routes.values():
+            metriques  = queue_model.calculer_metriques(etat)
+            total_lq  += metriques['Lq']
+            total_rho += metriques['rho']
+
+        lq_moyen  = round(total_lq  / nb_routes, 3)
+        rho_moyen = round(total_rho / nb_routes, 3)
+
+        # Mise à jour du dashboard
+        self.label_inter_max.setText('Nœud ' + str(inter_max['id'] + 1) + ' — ' + str(inter_max['queue']) + ' veh.')
+        self.label_wq_moyen.setText(str(wq_moyen) + ' s')
+        self.label_lq_moyen.setText(str(lq_moyen) + ' veh.')
+        self.label_rho_moyen.setText(str(rho_moyen))
 
         compteurs = markov.compter_etats(self.etats_routes)
         self.label_fluide.setText(str(compteurs['fluide']))
@@ -260,6 +325,9 @@ class FenetrePrincipale(QMainWindow):
         self.label_bouchon.setText(str(compteurs['bouchon']))
 
         resultat = optimizer.optimiser_feux(self.etats_routes)
+        # On met à jour les durées des feux selon l'optimiseur
+        self.duree_rouge_ms = resultat['duree_rouge'] * 1000
+        self.duree_vert_ms  = resultat['duree_vert']  * 1000
         self.label_rouge.setText(str(resultat['duree_rouge']) + ' s')
         self.label_vert.setText(str(resultat['duree_vert']) + ' s')
         self.label_gain.setText('+' + str(resultat['gain_pourcent']) + '%')
@@ -269,6 +337,7 @@ class FenetrePrincipale(QMainWindow):
         self.en_cours = True
         self.timer_animation.start()
         self.timer_markov.start()
+        self.timer_feux.start(self.duree_rouge_ms)  # la gestion du timer des feux
         self._set_etat('en cours...', C_FLUIDE)
         self.btn_start.setEnabled(False)
         self.btn_pause.setEnabled(True)
@@ -278,6 +347,7 @@ class FenetrePrincipale(QMainWindow):
         self.en_cours = False
         self.timer_animation.stop()
         self.timer_markov.stop()
+        self.timer_feux.stop()  # la gestion du timer des feux
         self._set_etat('en pause', C_RALENTI)
         self.btn_start.setEnabled(True)
         self.btn_pause.setEnabled(False)
@@ -285,6 +355,7 @@ class FenetrePrincipale(QMainWindow):
     def _reinitialiser(self):
         self.canvas.vehicules = [0.0] * 12
         self.etats_routes = markov.etat_initial(12)
+        self.files_intersections = queue_model.files_initiales(9) # remettre les files à zéro
         self.canvas.mettre_a_jour_etats(self.etats_routes)
         if not self.en_cours:
             self._demarrer()
@@ -293,8 +364,10 @@ class FenetrePrincipale(QMainWindow):
         self.en_cours = False
         self.timer_animation.stop()
         self.timer_markov.stop()
+        self.timer_feux.stop()  # la gestion du timer des feux
         self.canvas.vehicules = [0.0] * 12
         self.etats_routes = markov.etat_initial(12)
+        self.files_intersections = queue_model.files_initiales(9) # remettre les files à zéro
         self.canvas.mettre_a_jour_etats(self.etats_routes)
         self._set_etat('arrêté', C_BOUCHON)
         self.btn_start.setEnabled(True)
@@ -309,10 +382,10 @@ class FenetrePrincipale(QMainWindow):
         )
 
     def _changer_scenario(self, index):
-        cle = SCENARIOS_CLES[index]
-        self.etats_routes = monte_carlo.generer_etats_initiaux(12, cle)
+        self.scenario_actuel = SCENARIOS_CLES[index]  # sauvegarde le scénario
+        self.etats_routes = monte_carlo.generer_etats_initiaux(12, self.scenario_actuel)
         self.canvas.mettre_a_jour_etats(self.etats_routes)
-        risque = monte_carlo.estimer_risque_bouchon(500, 12, cle)
+        risque = monte_carlo.estimer_risque_bouchon(500, 12, self.scenario_actuel)
         self.label_risque.setText(str(int(risque * 100)) + '%')
 
     def _connecter_boutons(self):
@@ -434,9 +507,23 @@ class FenetrePrincipale(QMainWindow):
 
         self.label_rouge = self._info_row('Feu rouge optimal', '—',  layout, 'white')
         layout.addSpacing(6)
-        self.label_vert  = self._info_row('Feu vert optimal',  '—',  layout, 'white')
+        self.label_vert  = self._info_row('Feu vert optimal', '—',  layout, 'white')
         layout.addSpacing(6)
-        self.label_gain  = self._info_row('Gain fluidité',     '—',  layout, C_FLUIDE)
+        self.label_gain  = self._info_row('Gain fluidité', '—',  layout, C_FLUIDE)
+
+        # Section : Files d'attente
+        layout.addWidget(separateur_h())
+        layout.addSpacing(14)
+        layout.addWidget(label_section('Files d\'attente M/M/1'))
+        layout.addSpacing(10)
+
+        self.label_inter_max = self._ligne_info('Intersection max', '—', layout)
+        layout.addSpacing(6)
+        self.label_wq_moyen  = self._ligne_info('Attente moy. Wq', '—', layout)
+        layout.addSpacing(6)
+        self.label_lq_moyen  = self._ligne_info('File moy. Lq', '—', layout)
+        layout.addSpacing(6)
+        self.label_rho_moyen = self._ligne_info('Saturation ρ', '—', layout, C_RALENTI)
 
         layout.addStretch()
 
@@ -481,6 +568,21 @@ class FenetrePrincipale(QMainWindow):
         ll.addWidget(lbl_v)
         layout_parent.addWidget(ligne)
         return lbl_v
+
+    def _basculer_feux(self):
+        """Bascule l'état des feux et applique la durée calculée par l'optimiseur."""
+
+        # On bascule l'état
+        self.feux_verts = not self.feux_verts
+
+        # On applique la durée correspondante calculée par Python
+        if self.feux_verts:
+            self.timer_feux.start(self.duree_vert_ms)
+        else:
+            self.timer_feux.start(self.duree_rouge_ms)
+
+        # On redessine le canvas
+        self.canvas.update()
 
 
 #  Lancement

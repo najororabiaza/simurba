@@ -108,6 +108,9 @@ let running = false;
 let animationId = null;
 
 let speedFactor = 1;
+// Durées des feux reçues de l'optimiseur Python — en frames (secondes × 60fps)
+let dureeVertFrames  = 30 * 60;
+let dureeRougeFrames = 30 * 60;
 const speedSlider = document.getElementById('speed-slider');
 const speedLabel  = document.getElementById('speed-label');
 const presetBtns  = document.querySelectorAll('.speed-preset');
@@ -419,13 +422,29 @@ function drawVehicles() {
 function updateTrafficLights() {
     trafficLights.forEach(tl => {
         tl.timer += speedFactor;
-        if (tl.timer > 300) { tl.state = tl.state === 'green' ? 'red' : 'green'; tl.timer = 0; }
+
+        // Durée calculée par Python selon l'état du réseau
+        const dureeActuelle = tl.state === 'green' ? dureeVertFrames : dureeRougeFrames;
+
+        if (tl.timer > dureeActuelle) {
+            tl.state = tl.state === 'green' ? 'red' : 'green';
+            tl.timer = 0;
+        }
     });
 }
 
 function updateVehicles() {
     vehicles.forEach(v => {
-        v.progress += v.baseSpeed * speedFactor;
+
+        // Multiplicateur de vitesse selon l'état Markov de la route
+        let multiplicateur = 1.0;
+        if (v.road.state === 'ralenti') {
+            multiplicateur = 0.4;   // moitié de la vitesse
+        } else if (v.road.state === 'bouchon') {
+            multiplicateur = 0.1;   // quasi à l'arrêt
+        }
+
+        v.progress += v.baseSpeed * speedFactor * multiplicateur;
         if (v.progress > 1) v.progress = 0;
     });
 }
@@ -515,6 +534,10 @@ function mettreAJourOptimisation(optim) {
     if (rougeEl) rougeEl.textContent = optim.duree_rouge + ' s';
     if (vertEl)  vertEl.textContent  = optim.duree_vert  + ' s';
     if (gainEl)  gainEl.textContent  = '+' + optim.gain_pourcent + '%';
+
+    // Python a calculé ces durées — le JS les applique uniquement
+    dureeVertFrames  = optim.duree_vert  * 60;
+    dureeRougeFrames = optim.duree_rouge * 60;
 }
 
 //  Appel POST vers /api/tick/ — cœur de la simulation côté serveur
@@ -543,6 +566,7 @@ async function appellerTick() {
         // Optimisation — on met à jour les durées recommandées
         if (donnees.optimisation) {
             mettreAJourOptimisation(donnees.optimisation);
+            appellerStats();
         }
 
     } catch (erreur) {
@@ -550,6 +574,33 @@ async function appellerTick() {
         console.warn('Tick API échoué :', erreur);
     }
 }
+
+// Appel GET vers /api/stats/ — métriques M/M/1 pour le dashboard
+async function appellerStats() {
+    if (!running) return;
+
+    try {
+        const reponse = await fetch('/api/stats/');
+        const donnees = await reponse.json();
+
+        // Calcul des moyennes Lq, Wq, ρ sur toutes les routes
+        const metriques = Object.values(donnees.metriques_par_route);
+        const nb        = metriques.length;
+
+        const lq_moyen  = (metriques.reduce((s, m) => s + m.Lq,  0) / nb).toFixed(3);
+        const rho_moyen = (metriques.reduce((s, m) => s + m.rho, 0) / nb).toFixed(3);
+
+        // Mise à jour des éléments HTML
+        const lqEl  = document.getElementById('lq-moyen');
+        const rhoEl = document.getElementById('rho-moyen');
+        if (lqEl)  lqEl.textContent  = lq_moyen  + ' veh.';
+        if (rhoEl) rhoEl.textContent = rho_moyen;
+
+    } catch (erreur) {
+        console.warn('Stats API échoué :', erreur);
+    }
+}
+
 
 //  Le tick s'exécute toutes les 2 secondes
 const INTERVALLE_TICK_MS = 2000;

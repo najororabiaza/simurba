@@ -1,138 +1,128 @@
 import random
 
-#  Les 3 etats possibles d'une route
-FLUIDE  = 'fluide'
-RALENTI = 'ralenti'
-BOUCHON = 'bouchon'
+# --- États possibles du trafic ------------------------------------------------
+# Une route peut être dans l'un de ces trois états à chaque instant.
+# Ces états sont ceux vus dans le cours (chapitre 3, chaînes de Markov).
 
-# Liste ordonnée des états — l'ordre est important pour la matrice
+FLUIDE  = 'fluide'      # circulation fluide
+RALENTI = 'ralenti'     # circulation ralentie
+BOUCHON = 'bouchon'     # bouchon
+
+# Liste des états dans l'ordre utilisé pour les probabilités
 ETATS = [FLUIDE, RALENTI, BOUCHON]
 
 
-
-#  La matrice de transition
+# --- Matrices de transition selon le scénario ----------------------------------
+# Chaque scénario a sa propre matrice de transition.
+# Cela permet d'avoir un comportement plus agressif en heure de pointe,
+# plus calme la nuit, etc. (cohérent avec les scénarios Monte Carlo).
 #
-#  C'est le cœur des Chaînes de Markov.
-#  Elle dit : "si je suis dans l'état X, quelle est la probabilité
-#  de passer dans l'état Y au prochain tick ?"
-#
-#  Lecture : chaque LIGNE correspond à l'état actuel.
-#            chaque COLONNE correspond à l'état suivant possible.
-#            La somme de chaque ligne doit toujours valoir 1.0
-#
-#  Exemple : si une route est FLUIDE (ligne 0) :
-#    - 85% de chances de rester FLUIDE
-#    - 12% de chances de devenir RALENTI
-#    -  3% de chances de devenir BOUCHON
+# Pour chaque matrice :
+#   - une ligne correspond à l'état actuel,
+#   - une colonne correspond à l'état suivant,
+#   - la somme de chaque ligne vaut toujours 1.
 
-
-MATRICE_TRANSITION = {
-    #          Fluide  Ralenti  Bouchon
-    FLUIDE:  [  0.85,   0.12,    0.03  ],
-    RALENTI: [  0.20,   0.65,    0.15  ],
-    BOUCHON: [  0.10,   0.25,    0.65  ],
+MATRICES = {
+    # Scénario normal (journée ordinaire)
+    'normal': {
+        FLUIDE:  [0.85, 0.12, 0.03],   # fluide → fluide 85%, ralenti 12%, bouchon 3%
+        RALENTI: [0.20, 0.65, 0.15],   # ralenti → fluide 20%, ralenti 65%, bouchon 15%
+        BOUCHON: [0.10, 0.25, 0.65],   # bouchon → fluide 10%, ralenti 25%, bouchon 65%
+    },
+    # Heure de pointe (transitions plus brutales)
+    'heure_de_pointe': {
+        FLUIDE:  [0.70, 0.20, 0.10],
+        RALENTI: [0.15, 0.60, 0.25],
+        BOUCHON: [0.05, 0.20, 0.75],
+    },
+    # Nuit (trafic très stable, peu de changements)
+    'nuit': {
+        FLUIDE:  [0.95, 0.04, 0.01],
+        RALENTI: [0.40, 0.55, 0.05],
+        BOUCHON: [0.30, 0.40, 0.30],
+    },
+    # Accident (forte probabilité de se dégrader)
+    'accident': {
+        FLUIDE:  [0.60, 0.25, 0.15],
+        RALENTI: [0.10, 0.50, 0.40],
+        BOUCHON: [0.05, 0.15, 0.80],
+    },
 }
 
 
+# --- Fonctions publiques -------------------------------------------------------
 
-#  calculer le prochain état d'UNE route
-#
-#  Paramètre :
-#    etat_actuel = l'état actuel de la route ('fluide', etc.)
-#
-#  Retourne :
-#    le nouvel état de la route après un tick
+def prochain_etat(etat_actuel, scenario='normal'):
+    """
+    Calcule le prochain état d'une route selon la chaîne de Markov
+    pour le scénario donné.
 
+    Paramètres :
+        etat_actuel : str  ( 'fluide' , 'ralenti' , 'bouchon' )
+        scenario    : str  (clé dans MATRICES)
 
-def prochain_etat(etat_actuel):
+    Retourne :
+        str : le nouvel état après un pas de temps.
+    """
+    # Récupère la matrice correspondant au scénario
+    matrice = MATRICES.get(scenario, MATRICES['normal'])
 
-    # On récupère les probabilités de transition pour cet état
-    # Exemple si etat_actuel = 'fluide' = probabilites = [0.85, 0.12, 0.03]
-    probabilites = MATRICE_TRANSITION[etat_actuel]
+    # Ligne de la matrice pour l'état actuel
+    probabilites = matrice[etat_actuel]
 
-    # random.choices() choisit un élément dans ETATS
-    # en tenant compte des poids (probabilites)
-    # k=1 signifie qu'on veut 1 seul résultat = retourne une liste
+    # Tirage aléatoire pondéré (comme dans le cours)
     resultat = random.choices(ETATS, weights=probabilites, k=1)
 
-    # resultat est une liste comme ['fluide'], on prend le premier élément
     return resultat[0]
 
 
+def tick(etats_routes, scenario='normal'):
+    """
+    Fait avancer toutes les routes d'un cran (un tick de la simulation)
+    en utilisant la chaîne de Markov adaptée au scénario.
 
-#  faire évoluer TOUTES les routes du réseau
-#
-#  Paramètre :
-#    etats_routes = un dictionnaire { id_route: etat_actuel }
-#    Exemple : { 0: 'fluide', 1: 'ralenti', 2: 'bouchon', ... }
-#
-#  Retourne :
-#    un nouveau dictionnaire avec les états mis à jour
+    Paramètres :
+        etats_routes : dict { id_route (int) : etat (str) }
+        scenario     : str
 
-
-def tick(etats_routes):
-
-    # On crée un dictionnaire vide pour stocker les nouveaux états
+    Retourne :
+        dict avec les nouveaux états.
+    """
     nouveaux_etats = {}
 
-    # On parcourt chaque route et son état actuel
     for id_route, etat_actuel in etats_routes.items():
+        nouveaux_etats[id_route] = prochain_etat(etat_actuel, scenario)
 
-        # On calcule le prochain état pour cette route
-        nouvel_etat = prochain_etat(etat_actuel)
-
-        # On sauvegarde le nouvel état dans le dictionnaire
-        nouveaux_etats[id_route] = nouvel_etat
-
-    # On retourne tous les nouveaux états
     return nouveaux_etats
 
 
-
-#  créer l'état initial du réseau
-#
-#  Paramètre :
-#    nombre_routes = le nombre de routes dans le réseau (12 ici)
-#
-#  Retourne :
-#    un dictionnaire { 0: 'fluide', 1: 'fluide', ... }
-#    toutes les routes commencent en état FLUIDE
-
-
 def etat_initial(nombre_routes):
+    """
+    Crée l'état de départ du réseau : toutes les routes sont fluides.
+    (Utilisé si aucun scénario Monte Carlo n'est chargé.)
 
-    # On crée un dictionnaire avec toutes les routes en état FLUIDE
-    etats = {}
+    Paramètre :
+        nombre_routes : int (12 dans notre grille)
 
-    # On crée une entrée pour chaque route (de 0 à nombre_routes - 1)
-    for i in range(nombre_routes):
-        etats[i] = FLUIDE
-
-    return etats
-
-
-
-#  compter les routes par état
-#
-#  Utile pour le dashboard (Fluide: 6, Ralenti: 4, Bouchon: 2)
-#
-#  Paramètre :
-#    etats_routes = le dictionnaire des états actuels
-#
-#  Retourne :
-#    un dictionnaire { 'fluide': N, 'ralenti': N, 'bouchon': N }
+    Retourne :
+        dict { 0: 'fluide', 1: 'fluide', ... }
+    """
+    return {i: FLUIDE for i in range(nombre_routes)}
 
 
 def compter_etats(etats_routes):
+    """
+    Compte combien de routes sont dans chaque état.
+    Utile pour le tableau de bord.
 
-    # On initialise les compteurs à zéro
-    compteurs = {
-        FLUIDE:  0,
-        RALENTI: 0,
-        BOUCHON: 0,
-    }
+    Paramètre :
+        etats_routes : dict { id_route : etat }
 
-    # On parcourt tous les états et on incrémente le bon compteur
+    Retourne :
+        dict { 'fluide': nb, 'ralenti': nb, 'bouchon': nb }
+    """
+    compteurs = {FLUIDE: 0, RALENTI: 0, BOUCHON: 0}
+
     for etat in etats_routes.values():
         compteurs[etat] += 1
 
