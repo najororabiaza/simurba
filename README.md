@@ -1,3 +1,8 @@
+> **Auteur :** NajoroRabiaza  
+> **Établissement :** ESTI — L2 Informatique  
+> **Cours :** Modélisation Stochastique  
+> **Année :** 2025 — 2026
+
 # Simurba — Simulateur de Trafic Urbain
 
 > Projet Final — Modélisation Stochastique — L2 Informatique  
