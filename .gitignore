@@ -6,5 +6,8 @@ db.sqlite3
 venv/
 .DS_Store
 archive
-
+archive/
 staticfiles/
+staticfiles/
+staticfiles/
+uv.lock
